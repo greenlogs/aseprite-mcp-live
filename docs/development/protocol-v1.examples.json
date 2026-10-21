@@ -1,0 +1,167 @@
+{
+  "hello": {
+    "type": "hello",
+    "protocol_version": 1,
+    "token": "example-startup-token",
+    "session_id": "session-1",
+    "aseprite_version": "1.3.7",
+    "api_version": 28,
+    "capabilities": [
+      "get_document_info",
+      "apply_operations",
+      "get_preview"
+    ]
+  },
+  "welcome": {
+    "type": "welcome",
+    "protocol_version": 1,
+    "session_id": "session-1",
+    "capabilities": [
+      "get_document_info",
+      "apply_operations",
+      "get_preview"
+    ],
+    "limits": {
+      "max_message_bytes": 8388608,
+      "max_operations": 256,
+      "max_pixels": 262144,
+      "max_png_bytes": 4194304,
+      "timeout_seconds": 30.0,
+      "dedup_entries": 256,
+      "dedup_ttl_seconds": 120.0
+    }
+  },
+  "requests": [
+    {
+      "protocol_version": 1,
+      "request_id": "info-1",
+      "target": {
+        "backend": "live",
+        "session_id": "session-1",
+        "document_id": "doc-1"
+      },
+      "action": {
+        "name": "get_document_info"
+      }
+    },
+    {
+      "request_id": "list-1",
+      "target": {
+        "backend": "live",
+        "session_id": "session-1"
+      },
+      "action": {
+        "name": "list_documents"
+      }
+    },
+    {
+      "request_id": "create-1",
+      "target": {
+        "backend": "live",
+        "session_id": "session-1"
+      },
+      "action": {
+        "name": "create_sprite",
+        "width": 16,
+        "height": 16
+      }
+    },
+    {
+      "request_id": "paint-1",
+      "target": {
+        "backend": "live",
+        "session_id": "session-1",
+        "document_id": "doc-1"
+      },
+      "expected_revision": 7,
+      "action": {
+        "name": "apply_operations",
+        "operations": [
+          {
+            "op": "create_layer",
+            "ref": "paint",
+            "name": "绘图"
+          },
+          {
+            "op": "pixel",
+            "layer": {
+              "kind": "ref",
+              "value": "paint"
+            },
+            "x": 2,
+            "y": 3,
+            "rgba": [
+              255,
+              80,
+              20,
+              255
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "request_id": "preview-1",
+      "target": {
+        "backend": "live",
+        "session_id": "session-1",
+        "document_id": "doc-1"
+      },
+      "expected_revision": 8,
+      "action": {
+        "name": "get_preview",
+        "frame": 1,
+        "scale": 2,
+        "region": {
+          "x": 0,
+          "y": 0,
+          "width": 8,
+          "height": 8
+        }
+      }
+    },
+    {
+      "request_id": "disk-1",
+      "target": {
+        "backend": "cli",
+        "path": "C:/work/sprite.aseprite"
+      },
+      "action": {
+        "name": "get_document_info"
+      }
+    }
+  ],
+  "results": [
+    {
+      "protocol_version": 1,
+      "request_id": "paint-1",
+      "ok": true,
+      "target": {
+        "backend": "live",
+        "session_id": "session-1",
+        "document_id": "doc-1"
+      },
+      "revision": 8,
+      "data": {
+        "layer_refs": {
+          "paint": "layer-2"
+        }
+      }
+    },
+    {
+      "protocol_version": 1,
+      "request_id": "paint-2",
+      "ok": false,
+      "target": {
+        "backend": "live",
+        "session_id": "session-1",
+        "document_id": "doc-1"
+      },
+      "revision": 9,
+      "error": {
+        "code": "REVISION_CONFLICT",
+        "message": "Expected revision 8, current revision 9"
+      }
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+[project]
+name = "aseprite-mcp"
+version = "0.1.0"
+description = "Aseprite MCP with explicit CLI and live backend contracts"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.13"
+dependencies = [
+    "httpx>=0.28.1",
+    "mcp[cli]>=1.6.0",
+    "pillow>=10.0.0",
+    "python-dotenv>=1.0.1",
+    "pydantic>=2.11,<3",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.3",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["real: requires a real Aseprite executable"]
+
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project.scripts]
+aseprite-mcp = "aseprite_mcp.__main__:main"
