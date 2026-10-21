@@ -6,7 +6,7 @@
 
 P0 已实现类型、认证/协商函数、执行接口、单会话路由、去重、CLI 纵向路径和 stdio MCP。`Backend` 提供 `capabilities: frozenset[str]` 与 `async execute(Request) -> Result`。公共入口为 `Executor.execute(JSON str/bytes) -> Result`，业务参数经严格 JSON 校验；未知字段、错误类型均拒绝。
 
-P0 当时没有 WebSocket listener、Lua 扩展或真实实时编辑后端；P1-M1/M2 已真实实现连接及文档/事务。P1 在 `create_server` 生命周期把实际连接的 Backend 绑定同一个 Executor；禁止另起无法被工具访问的 Executor。实时工具目前注册但返回 `NOT_CONNECTED`，状态工具返回 `connected: false`。P0 对实时修订、断连及超时仅模拟错误契约，真实实现和验证在 P1。
+P0 当时没有 WebSocket listener、Lua 扩展或真实实时编辑后端；P1 已真实实现连接、文档/事务及图片。P1 在 `create_server` 生命周期把实际连接的 Backend 绑定同一个 Executor；禁止另起无法被工具访问的 Executor。实时工具已接通；没有编辑器时返回 `NOT_CONNECTED`，状态工具返回 `connected: false`。P0 对实时修订、断连及超时仅模拟错误契约，真实实现和验证在 P1。
 
 ## 传输、握手与对象
 
@@ -74,7 +74,7 @@ CLI `cli.lua` 是固定脚本，参数写入 UTF-8 JSON 文件，经 `--script-p
 
 get_preview 的成功 data 包含 `png: PngPayload`：mime_type 固定 image/png，encoding 固定 base64，data 为无 data-URI 前缀的 base64，width/height 为输出图片尺寸，frame、scale、可选 region 为源画布区域。外层 Result 关联目标和实际 revision。PngPayload.decode 检查体积、PNG 内容和尺寸，禁止返回本地路径替代图片。
 
-P1-M3 将解码 PNG 包装为 MCP ImageContent，文字元数据与图片一起返回；目前 get_preview 尚无真实图片能力。scale 为整数最近邻，region 全部在画布内；完整画布或缩放后像素超限时后端必须拒绝。读取/预览不得修改源文档、活动上下文或历史。
+P1-M3 已校验 PNG 并包装为 MCP ImageContent，文字元数据与图片一起返回，文字中不重复 base64。scale 为整数最近邻，region 全部在画布内；完整画布或缩放后像素超限时后端必须拒绝。读取/预览不得修改源文档、活动上下文或历史。
 
 ## 上限和去重
 
@@ -95,3 +95,7 @@ Executor 串行执行，缓存相同 ID/相同请求的最终结果（包括已�
 ## P1-M2 结果细化
 
 实时 info/list 字段已实现；selection 为 bounds 与 empty，active_frame 从 1 起。revision 是内容事件计数，回滚也可能推进，不能当作批次数；context_revision 独立。apply 无新图层时可省略 layer_refs；undo/redo applied=false 表示没有收到历史变更事件。save 仅原生 .aseprite/.ase 绝对路径，存在目标无论是否原路径都需 overwrite=true；不能用保存工具隐式导出图片。
+
+## P1-M3 图片实现
+
+扩展按 v1 data.png 发送 base64；MCP 层返回 TextContent(Result 元数据、png 去掉 data 字段) 与 ImageContent(image/png) 两块。PNG region 填实际区域，完整画布也显式给出原点/尺寸。Lua 内存编码采用存储型 deflate，事先以行字节数和块开销估算体积；消息预留 2048 字节元数据开销，因此很小的自定义消息上限可能提前拒绝。无需临时文件，不改变文档、上下文或历史。

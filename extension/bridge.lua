@@ -25,6 +25,10 @@ function M.new(plugin)
     self.cache={}; self.order={}; self.session=nil
     self:set_status("Disconnected")
   end
+  function self:shutdown()
+    self:disconnect()
+    if self.dialog then self.dialog:close(); self.dialog=nil end
+  end
   function self:connect(config)
     self:disconnect()
     if (type(config) ~= "table" and type(config) ~= "userdata") or type(config.url) ~= "string" or
@@ -44,6 +48,7 @@ function M.new(plugin)
         local capabilities={"list_documents"}
         if Sprite and Image and app.events and app.transaction and app.undo and app.redo then
           capabilities={"list_documents","get_document_info","create_sprite","apply_operations","save_sprite","undo","redo"}
+          if string.pack then capabilities[#capabilities+1]="get_preview" end
         end
         self.session=tostring(os.time()).."-"..tostring(math.random(1,2147483647)).."-"..tostring(generation)
         self.ws:sendText(json.encode{type="hello", protocol_version=1, token=config.token,
@@ -60,7 +65,8 @@ function M.new(plugin)
             self:disconnect(); self:set_status("Invalid welcome"); return
           end
           self.limits=message.limits
-          self.editor=dofile(app.fs.joinPath(plugin.path,"editor.lua")).new(self.limits)
+          local preview=string.pack and dofile(app.fs.joinPath(plugin.path,"preview.lua")) or nil
+          self.editor=dofile(app.fs.joinPath(plugin.path,"editor.lua")).new(self.limits,preview)
           self.ready=true; self:set_status("Connected")
           return
         end

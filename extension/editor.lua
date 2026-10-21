@@ -17,19 +17,34 @@ local function editable(layer)
   end
   return ordinary(layer)
 end
-function M.new(limits)
+function M.new(limits,preview)
   local self={documents={},next_document=0,next_layer=0,context=0,suppress_context=false,limits=limits}
   self.site_listener=app.events:on("sitechange",function()
     if not self.suppress_context then self.context=self.context+1 end
   end)
+  -- Commands include selection-shape changes whose bounds may stay identical.
+  self.command_listener=app.events:on("aftercommand",function()
+    if not self.suppress_context then self.context=self.context+1 end
+  end)
   function self:close()
     app.events:off(self.site_listener)
+    app.events:off(self.command_listener)
     for _,record in ipairs(self.documents) do
       for _,listener in ipairs(record.listeners) do pcall(function() record.events:off(listener) end) end
     end
     self.documents={}
   end
   function self:sync()
+    local active,layer,frame=app.activeSprite,app.activeLayer,app.activeFrame
+    local selection=""
+    if active then
+      local bounds=active.selection.bounds
+      selection=table.concat({tostring(active.selection.isEmpty),bounds.x,bounds.y,bounds.width,bounds.height},":")
+    end
+    if self.active~=active or self.active_layer~=layer or self.active_frame~=frame or self.selection~=selection then
+      self.context=self.context+1
+      self.active,self.active_layer,self.active_frame,self.selection=active,layer,frame,selection
+    end
     local current={}
     for _,sprite in ipairs(app.sprites) do
       local record=find(self.documents,sprite)
@@ -208,6 +223,8 @@ function M.new(limits)
     end
     local sprite=record.object
     if action.name=="get_document_info" then return self:info(record),record
+    elseif action.name=="get_preview" and preview then
+      return preview.render(sprite,action,limits),record
     elseif action.name=="apply_operations" then
       self:validate(record,action.operations)
       local refs={}

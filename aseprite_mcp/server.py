@@ -6,11 +6,15 @@ from uuid import uuid4
 
 from mcp.server.fastmcp import FastMCP
 from mcp.server.fastmcp.exceptions import ToolError
+from mcp.server.fastmcp.utilities.types import Image
+from mcp.types import TextContent
+from pydantic import ValidationError
 
 from .backends.cli import CliBackend
 from .backends.live import LiveBridge
 from .core.config import RuntimeConfig
 from .core.execution import Executor
+from .core.protocol import BackendError, PngPayload
 
 
 def create_server(profile: str | None = None) -> FastMCP:
@@ -76,10 +80,22 @@ def create_server(profile: str | None = None) -> FastMCP:
 
         @server.tool()
         async def get_preview(session_id: str, document_id: str, expected_revision: int,
-                              frame: int = 1, scale: int = 1, region: dict | None = None) -> dict:
-            """请求指定文档/修订/帧的 PNG；P1 接通图像内容。"""
-            return await dispatch({"name": "get_preview", "frame": frame, "scale": scale, "region": region},
-                                  session_id, document_id, expected_revision)
+                              frame: int = 1, scale: int = 1, region: dict | None = None) -> list:
+            """直接返回指定修订/帧的 PNG 图片及元数据；整数最近邻缩放。"""
+            result = await dispatch({"name": "get_preview", "frame": frame, "scale": scale, "region": region},
+                                    session_id, document_id, expected_revision)
+            try:
+                png = PngPayload.model_validate(result["data"]["png"])
+                raw = png.decode(config.limits)
+            except BackendError as exc:
+                raise ToolError(f"{exc.code}: {exc.message}") from exc
+            except (ValidationError, KeyError, TypeError) as exc:
+                raise ToolError("INVALID_REQUEST: Invalid editor PNG payload") from exc
+            # Keep metadata once, without duplicating base64 in text content.
+            metadata = png.model_dump(mode="json", exclude={"data"})
+            result["data"] = {"png": metadata}
+            return [TextContent(type="text", text=json.dumps(result, ensure_ascii=False)),
+                    Image(data=raw, format="png")]
 
         @server.tool()
         async def save_sprite(session_id: str, document_id: str, expected_revision: int,

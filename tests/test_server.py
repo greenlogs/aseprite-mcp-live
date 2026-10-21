@@ -34,9 +34,10 @@ def test_raw_lua_requires_explicit_opt_in(monkeypatch):
         create_server("unknown")
 
 
-def test_stdio_enumeration_and_mcp_error_flag():
+def test_stdio_enumeration_and_mcp_error_flag(tmp_path):
     async def scenario():
-        env = dict(os.environ, ASEPRITE_MCP_TOOL_PROFILE="core")
+        connection = tmp_path / "connection.json"
+        env = dict(os.environ, ASEPRITE_MCP_TOOL_PROFILE="core", ASEPRITE_MCP_CONNECTION_FILE=str(connection))
         parameters = StdioServerParameters(command=sys.executable, args=["-m", "aseprite_mcp"], env=env)
         async with stdio_client(parameters) as streams:
             async with ClientSession(*streams) as session:
@@ -51,6 +52,7 @@ def test_stdio_enumeration_and_mcp_error_flag():
         # Flush Windows proactor callbacks before asyncio.run closes the loop.
         gc.collect()
         await asyncio.sleep(0.05)
+        connection.unlink(missing_ok=True)  # SDK 1.6.0 force-terminates the Windows child.
     run(scenario())
 
 

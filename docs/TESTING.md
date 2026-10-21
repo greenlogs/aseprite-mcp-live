@@ -25,12 +25,12 @@ uv run --locked pytest -q --basetemp=.work/pytest --junitxml=.work/tests.xml
 
 导入的上游测试是真实 CLI 测试：创建磁盘文件、图层、帧、绘图、导出、字体、特效与错误传播。每文件有独立画布，依赖同文件执行顺序，完整回归使用上面命令。临时目录由 pytest 管理，勿指向个人数据目录。`test_environment.py` 验证工具枚举及中文空格路径创建/读取/导出，Pillow 核对 PNG 像素。TrueType 字体缺失时相关测试明确跳过。
 
-契约和进程故障模拟不代表已连接编辑器；真实 CLI 也不代表访问了其他进程的未保存文档。实时扩展、客户端图片显示和干净安装/发布验收分别属于 P1/P2。每次实际结果见 [P0 阶段交接](progress/P0.md)。
+契约和进程故障模拟不代表已连接编辑器；真实 CLI 也不代表访问了其他进程的未保存文档。实时扩展和客户端图片显示已在 P1 验收，干净安装/发布验收属于 P2。每次实际结果见 [P0 阶段交接](progress/P0.md)。
 
 
 ## P0-M2 配置与专项验证
 
-默认 core 配置枚举 9 个实时核心入口，P0 没有连接，除状态外返回 NOT_CONNECTED。只需要磁盘 CLI 时设置 `$env:ASEPRITE_MCP_TOOL_PROFILE = 'cli'`；枚举 115 个原名兼容工具和新增 cli_execute。all 配置为 125 个；原始 Lua 需额外显式设置 `ASEPRITE_MCP_ENABLE_RAW_LUA=1`。工具错误的兼容差异和全部上限见 [协议 v1](development/PROTOCOL.md)，环境变量见 `.env.example`。
+默认 core 配置枚举 9 个实时核心入口；P1 已接通实时功能，没有连接时除状态外返回 NOT_CONNECTED。只需要磁盘 CLI 时设置 `$env:ASEPRITE_MCP_TOOL_PROFILE = 'cli'`；枚举 115 个原名兼容工具和新增 cli_execute。all 配置为 125 个；原始 Lua 需额外显式设置 `ASEPRITE_MCP_ENABLE_RAW_LUA=1`。工具错误的兼容差异和全部上限见 [协议 v1](development/PROTOCOL.md)，环境变量见 `.env.example`。
 
 ```powershell
 # 纯契约/故障模拟与真实 stdio；排除需要 Aseprite 的 stdio CLI 用例
@@ -57,3 +57,18 @@ P0 另执行 `uv build --out-dir .work/build`，检查 wheel 中的 `backends/cl
 ## P1-M2 文档专项
 
 `uv run --locked pytest -q tests/test_live_editor.py tests/test_live_bridge.py tests/test_protocol.py tests/test_server.py --basetemp=.work/pytest-editor`。test_live_editor 使用真实 UI、app.useTool 手工动作及真实 transaction 失败注入；live_support 中的本地测试控制文件仅用于夹具，不是产品协议或任意 Lua 工具。验证未保存文档、重名层、偏移/空 Cel、整批历史、修订冲突、去重和中文原生保存。
+
+## P1 实时使用与图片验收
+
+先按前文加载开发扩展，启动 stdio MCP 服务并选择发现 JSON 连接；用 get_connection_status 获得 session_id。list_documents 返回会话 document_id 和 revision；读取后把明确目标及 revision 传给 apply_operations。批次支持 create_layer、set_opacity、pixel、rectangle，字段见[协议](development/PROTOCOL.md)。调用 get_preview(session_id,document_id,expected_revision,frame=1,scale=8) 可直接取得 PNG 图片块；undo/redo 后读取新 revision 再看图。未调用 save_sprite 不保存文件，保存仅支持 .aseprite/.ase 绝对路径，覆盖显式允许。
+
+```powershell
+# 专项：真实 MCP 图片、实际 PNG 像素/透明度、历史闭环和体积上限
+uv run --locked pytest -q tests/test_live_preview.py --basetemp=.work/pytest-preview
+# 阶段集成 + 全部旧 CLI 回归
+uv run --locked pytest -q --basetemp=.work/pytest-p1-final --junitxml=.work/P1-final.xml
+```
+
+test_live_preview 以真实 MCP SDK 1.6.0 stdio 客户端完成闭环，在对应 pytest 临时目录生成 before/after/undo/redo PNG、client-gallery.html 和 client-evidence.json。用浏览器打开 HTML 确认实际显示；本次 Edge 155.0.4283.62 已实际渲染、截图并检查四图 64×64。像素、协议收到图片和显示成功是分开的验收步骤。最终本地证据保留于 .work/p1-evidence；不将临时图片/配置/凭据入库。
+
+SDK 1.6.0 的 Windows 客户端退出会强杀 stdio 子进程，可能留下发现文件；正常服务退出会清理。默认发现文件每进程独立；使用固定 ASEPRITE_MCP_CONNECTION_FILE 时，若重启提示文件已存在，先确认旧服务已退出，再移除这一个残留 JSON 并重启。不要删除仍在使用的连接配置。异常退出策略和正式安装在 P2 继续验收。
