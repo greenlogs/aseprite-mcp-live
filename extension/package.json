@@ -1,0 +1,11 @@
+{
+  "name": "aseprite-mcp-live",
+  "displayName": "Aseprite MCP Live",
+  "description": "Local MCP bridge for explicit in-memory document editing",
+  "version": "0.1.0",
+  "author": {"name": "Aseprite MCP contributors"},
+  "publisher": "aseprite-mcp",
+  "license": "MIT",
+  "categories": ["Scripts"],
+  "contributes": {"scripts": [{"path": "./main.lua"}]}
+}

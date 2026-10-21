@@ -47,3 +47,9 @@ uv run --locked pytest -q --basetemp=.work/pytest-p0-final --junitxml=.work/P0-f
 `test_protocol.py` 的实时 Backend 是模拟；`test_cli_backend.py` 前四个参数化用例操作真实 Aseprite，其余故障用例以 monkeypatch 注入进程/回执。`test_server.py` 启动真实 stdio MCP 子进程，完成 initialize、list_tools、status 和 NOT_CONNECTED 的 isError 验证；实时错误测试不连接编辑器；另一个 `test_real_cli_through_stdio` 用例通过真实 MCP 子进程调用真实 Aseprite CLI 读取文件。
 
 P0 另执行 `uv build --out-dir .work/build`，检查 wheel 中的 `backends/cli.lua` 与入口存在，sdist 不含本地软件/私密配置/环境/缓存。这只是包资源检查，P2 的干净安装、扩展打包与正式发布验收尚未执行。
+
+## P1-M1 连接专项
+
+`uv run --locked pytest -q tests/test_live_bridge.py tests/test_protocol.py tests/test_server.py --basetemp=.work/pytest-live`。其中 socket 用例模拟编辑器，real_extension_lifecycle 使用真实非 batch UI 进程与隔离 ASEPRITE_USER_FOLDER，安装 package.json 并验证 init/exit、连接/重连。测试仅对隔离目录夹具脚本预设读/写/socket 权限，不修改个人配置；Windows 隐藏启动测试窗口。
+
+开发扩展安装：将 extension 文件夹复制到 Aseprite 用户配置目录的 extensions/aseprite-mcp-live，重启后使用 File > Scripts > MCP: Connect / Settings。从 MCP get_connection_status 或服务 stderr 获取 connection_file 路径，在对话框选择此 JSON 并连接；首次按 Aseprite 权限对话框允许读取配置和回环连接。正式打包/安装验收在 P2。配置文件含临时凭据，不入库、不分享；服务退出后清理。

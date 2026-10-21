@@ -1,4 +1,4 @@
-"""Local configuration. No listener is opened until the P1 transport exists."""
+"""Loopback listener configuration; credentials are generated per server startup."""
 import os
 import secrets
 from dataclasses import dataclass, field

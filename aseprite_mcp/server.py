@@ -1,12 +1,14 @@
 """MCP exposure profiles, separated from upstream decorator registration."""
 import json
 import os
+from contextlib import asynccontextmanager
 from uuid import uuid4
 
 from mcp.server.fastmcp import FastMCP
 from mcp.server.fastmcp.exceptions import ToolError
 
 from .backends.cli import CliBackend
+from .backends.live import LiveBridge
 from .core.config import RuntimeConfig
 from .core.execution import Executor
 
@@ -18,7 +20,17 @@ def create_server(profile: str | None = None) -> FastMCP:
         raise ValueError("ASEPRITE_MCP_TOOL_PROFILE must be core, cli or all")
     config = RuntimeConfig.from_env()
     executor = Executor(CliBackend(config.limits), config.limits)
-    server = FastMCP("aseprite")
+    bridge = LiveBridge(executor, config)
+
+    @asynccontextmanager
+    async def lifespan(app):
+        if profile in {"core", "all"}:
+            async with bridge.lifespan():
+                yield {"bridge": bridge}
+        else:
+            yield {}
+
+    server = FastMCP("aseprite", lifespan=lifespan)
 
     async def dispatch(action, session_id, document_id=None, expected_revision=None,
                        expected_context=None, request_id=None):
@@ -35,9 +47,8 @@ def create_server(profile: str | None = None) -> FastMCP:
     if profile in {"core", "all"}:
         @server.tool()
         async def get_connection_status() -> dict:
-            """读取实时连接状态；P0 尚无传输，不会回退到 CLI。"""
-            return {"connected": executor.live is not None, "session_id": executor.session_id,
-                    "protocol_version": 1, "capabilities": sorted(executor.live_capabilities)}
+            """读取实时会话、软件版本及本机连接配置文件位置。"""
+            return bridge.status()
 
         @server.tool()
         async def list_documents(session_id: str) -> dict:
