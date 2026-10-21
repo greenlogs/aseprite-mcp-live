@@ -1,6 +1,6 @@
 # 动态项目结构
 
-最近复核：2026-10-21，P2-M1 故障与状态管理。结构说明唯一来源；实际与规划分开。
+最近复核：2026-10-21，P2-M2 安装打包及阶段集成验收。结构说明唯一来源；实际与规划分开。
 
 ## 实际结构
 
@@ -8,9 +8,14 @@
 aseprite-mcp/
 ├─ .git/                     用户授权建立的本地版本库，main 分支，无远程
 ├─ Aseprite/                 本地软件与个人数据，忽略、不分发
-├─ .work/                    必需的隔离 Python、验收日志/XML、P1 图片证据和清理记录，忽略
+├─ .work/                    隔离 Python/安装环境、验收日志/XML、P1/P2 图片、release 候选和清理记录，忽略
 ├─ .venv/                    uv 项目环境，忽略
 ├─ 根目录早期测试画布/图像    以 .gitignore 精确规则忽略，保留本地文件
+├─ .github/workflows/check.yml Windows 契约/文档/打包 CI，无 GUI 或自动发布步骤
+├─ scripts/
+│  ├─ build_release.py      uv 构建、确定性扩展 ZIP、生产依赖及分发清单校验
+│  ├─ check_docs.py         Markdown 本地链接、服务入口及模块索引检查
+│  └─ verify_install.py     独立 Windows 安装验收脚本，真实 MCP SDK/UI 与图片证据
 ├─ aseprite_mcp/
 │  ├─ __init__.py            上游装饰器注册实例（116 项兼容基线）
 │  ├─ __main__.py            stdio 服务命令入口
@@ -34,7 +39,8 @@ aseprite-mcp/
 │  │  └─ cli.lua             固定磁盘读取及批量普通 RGB 图层编辑脚本
 │  └─ tools/                 20 个上游 CLI 工具模块及 __init__.py，原名/参数保留
 ├─ extension/
-│  ├─ package.json           注册 main.lua 的开发扩展清单
+│  ├─ package.json           注册 main.lua 的 0.1.0 发布扩展清单
+│  ├─ NOTICE.md              扩展包上游固定提交与许可归属
 │  ├─ main.lua               init/exit、连接/断开菜单与重载清理
 │  ├─ bridge.lua             设置、主动 WebSocket 握手/会话与编辑端去重
 │  ├─ editor.lua             文档/图层注册、事件修订、事务/历史与保存
@@ -66,6 +72,9 @@ aseprite-mcp/
    ├─ REFERENCES.md          本机环境与官方资料
    ├─ THIRD_PARTY.md         实际导入及许可记录
    ├─ upstream-manifest.json 原始导入文件、tree 和摘要
+   ├─ INSTALL.md             wheel/锁定依赖/扩展安装、MCP 配置及使用规则
+   ├─ TROUBLESHOOTING.md     故障码、环境/安装/重连诊断
+   ├─ RELEASING.md           本地候选构建、清单及真实验收/远程边界
    ├─ TESTING.md             配置、真实命令、测试分层与集成步骤
    ├─ development/
    │  ├─ README.md           开发约定
@@ -75,7 +84,7 @@ aseprite-mcp/
    │  │                      可由契约测试校验的握手/请求/结果样例
    │  ├─ MODULE_REPORT_TEMPLATE.md
    │  └─ prompts/            P0、P1、P2、P3 模块提示词
-   └─ progress/              P0～P3 阶段总结、P0/P1 各模块交接报告
+   └─ progress/              P0～P3 阶段总结、P0/P1/P2 各模块交接报告
 ```
 
 依赖方向：`__main__` → `server` → Request / Executor → CliBackend → commands / 固定 Lua → Aseprite CLI。旧兼容工具 → 共享算法/commands，尚未全部迁移到 Executor。live Backend 已实现同一 Backend 协议，通过 WebSocket 接入扩展；当前协商八种文档/事务/图片动作。协议层不导入工具或后端。
@@ -89,13 +98,13 @@ aseprite-mcp/
 | 依赖同步 | `uv sync --locked --python 3.13` |
 | 测试 | `uv run --locked pytest -q --basetemp=.work/pytest`；详见 [TESTING](TESTING.md) |
 | 公共 CLI 路径 | Python Executor.execute(JSON) 或 CLI 配置的 MCP cli_execute |
-| 构建 | `uv build --out-dir .work/build`；hatchling；包资源已检查，P2 发布/干净安装验收未执行 |
-| 扩展加载 | extension/package.json → main.lua init/exit；设置对话框选择服务发现 JSON；core/all lifespan 监听 |
-| 下一模块 | [P2-M2](development/prompts/P2-稳定性与首版发布.md#p2-m2) |
+| 构建 | `uv run --locked python scripts/build_release.py --out-dir dist`；wheel/sdist/扩展/锁定依赖/摘要 |
+| 扩展加载 | `.aseprite-extension` 安装或解压至配置 extensions/aseprite-mcp-live；main.lua init/exit；设置选择发现 JSON |
+| 下一模块 | [P3-M1](development/prompts/P3-高级能力迁移.md#p3-m1)，尚未开始 |
 
 ## 规划结构：尚未实现
 
-`scripts/` 扩展打包、`.github/workflows/` 自动检查及正式发布入口在 P2。高级能力按 P3 清单迁移；尚未存在的目录不是可运行入口。
+高级能力按 P3 清单迁移；远程发布入口未建立且不自动执行。scripts 与 Windows CI 配置已建立，远程 CI 未执行。
 
 ## 复核记录与更新规则
 
@@ -111,3 +120,7 @@ P0-M1 导入上游源码、测试和环境入口；P0-M2 增加协议/配置/执
 2026-10-21 P1-M3：新增 preview.lua 与 test_live_preview.py；独立图像内存编码 PNG，MCP 返回图片内容，实际客户端图片渲染及 179 项全量回归通过。清理重复测试目录，保留 .work/p1-evidence 四图/截图/测量及验收日志。
 
 2026-10-21 P2-M1：新增 core/files.py、core/legacy.py 与 test_reliability.py；执行器按资源排队并保留取消后回执，CLI 摘要契约/输出解码、事务 CPU/复制预算与随机发现路径已实现并真实验证。
+
+2026-10-21 P2-M2：新增 scripts 三个构建/文档/安装验收入口、Windows CI 配置、扩展 NOTICE 及安装/故障/发布文档；hatch 白名单限定服务与源码分发，扩展包含根部清单和四个 Lua；服务/扩展版本进入状态与兼容校验。
+
+P2 阶段复核：191 项完整 Windows 回归，独立 site-packages/扩展 ZIP/MCP SDK 双启动入口及图片显示通过；0.1.0 候选已验收未发布，其他平台未验证。

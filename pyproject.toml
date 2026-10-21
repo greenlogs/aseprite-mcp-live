@@ -29,3 +29,14 @@ build-backend = "hatchling.build"
 
 [project.scripts]
 aseprite-mcp = "aseprite_mcp.__main__:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["aseprite_mcp"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/aseprite_mcp", "/extension", "/tests", "/scripts", "/docs",
+    "/.github/workflows", "/pyproject.toml", "/uv.lock", "/.python-version",
+    "/.env.example", "/LICENSE", "/README.md", "/CONTRIBUTING.md",
+    "/AGENTS.md", "/EXECUTION_PLAN.md",
+]

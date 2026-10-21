@@ -9,7 +9,7 @@ from PIL import Image
 from aseprite_mcp.backends.cli import CliBackend
 from aseprite_mcp.core.commands import AsepriteCommand
 from aseprite_mcp.core.execution import Executor
-from aseprite_mcp.core.protocol import ErrorCode, Limits
+from aseprite_mcp.core.protocol import BackendError, ErrorCode, Limits, Request
 from aseprite_mcp.tools import canvas, export
 from conftest import ok, run
 
@@ -118,6 +118,12 @@ def test_cli_unsupported_and_invalid_target(tmp_path):
     assert result.error.code == ErrorCode.INVALID_TARGET
     result = run(executor().execute(request(source, {"name": "list_documents"})))
     assert result.error.code == ErrorCode.UNSUPPORTED_CAPABILITY
+    live = Request.model_validate_json(json.dumps({"request_id": "wrong-backend",
+        "target": {"backend": "live", "session_id": "s", "document_id": "d"},
+        "action": {"name": "get_document_info"}}))
+    with pytest.raises(BackendError) as error:
+        run(CliBackend(Limits()).execute(live))
+    assert error.value.code == ErrorCode.INVALID_TARGET
 
 
 def test_concurrent_disk_change_is_not_overwritten(tmp_path, monkeypatch):

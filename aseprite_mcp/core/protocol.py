@@ -10,6 +10,7 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
 PROTOCOL_VERSION = 1
+SERVICE_VERSION = "0.1.0"
 CORE_CAPABILITIES = frozenset({
     "list_documents", "get_document_info", "create_sprite", "apply_operations",
     "get_preview", "save_sprite", "undo", "redo",
@@ -66,6 +67,7 @@ class Handshake(Model):
     session_id: Identifier
     aseprite_version: Identifier
     api_version: Positive
+    extension_version: Identifier | None = None
     capabilities: list[Identifier]
 
 
@@ -80,6 +82,8 @@ class Welcome(Model):
 def negotiate(hello: Handshake, token: str) -> frozenset[str]:
     if hello.protocol_version != PROTOCOL_VERSION:
         raise BackendError(ErrorCode.VERSION_MISMATCH, "Protocol version must be 1")
+    if hello.extension_version is not None and hello.extension_version != SERVICE_VERSION:
+        raise BackendError(ErrorCode.VERSION_MISMATCH, "Install matching service and extension versions")
     if not hmac.compare_digest(hello.token.encode(), token.encode()):
         raise BackendError(ErrorCode.SESSION_MISMATCH, "Invalid startup token")
     if hello.api_version < 28:

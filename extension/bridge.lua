@@ -1,5 +1,6 @@
 -- Aseprite 1.3.7 uses (message, data); do not require the newer error argument.
 local M = {}
+local EXTENSION_VERSION = "0.1.0"
 -- API 28 JSON objects are userdata; json.encode does not serialize nested
 -- JSON userdata inside Lua tables. Normalize incoming messages recursively.
 local function plain(value)
@@ -53,6 +54,7 @@ function M.new(plugin)
         self.session=tostring(os.time()).."-"..tostring(math.random(1,2147483647)).."-"..tostring(generation)
         self.ws:sendText(json.encode{type="hello", protocol_version=1, token=config.token,
           session_id=self.session, aseprite_version=tostring(app.version), api_version=app.apiVersion,
+          extension_version=EXTENSION_VERSION,
           capabilities=capabilities})
         self:set_status("Handshaking")
       elseif kind==WebSocketMessageType.TEXT then

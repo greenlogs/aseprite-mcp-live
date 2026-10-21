@@ -77,3 +77,18 @@ SDK 1.6.0 的 Windows 客户端退出会强杀 stdio 子进程，可能留下发
 
 `uv run --locked pytest -q tests/test_reliability.py --basetemp=.work/pytest-reliability`。
 前十个用例覆盖真实 socket 的模拟编辑器、取消/迟到/重复/旧会话/磁盘冲突及实际 Python 子进程清理；标记 real 的最后用例使用真实 UI 验证事件风暴、人工切换/修改/撤销、事务超预算回滚及执行后丢回执。完整上游与实时回归仍使用全文的全量命令。发现文件默认加随机 UUID；固定路径不自动清理残留。
+
+## P2 隔离安装与阶段集成
+
+先运行 `uv run --locked python scripts/check_docs.py` 与 `uv run --locked python scripts/build_release.py --out-dir dist`。按 [INSTALL](INSTALL.md) 创建全新 uv 环境、同步 dist/requirements.txt，再以 --no-deps 安装 dist 中 wheel；不能用 editable 安装。
+
+```powershell
+# 将路径替换为实际位置；work-dir 必须是尚不存在的私有测试目录。
+uv run --locked python scripts/verify_install.py --python 'C:/Tools/aseprite-mcp/.venv/Scripts/python.exe' --extension 'C:/Downloads/aseprite-mcp/aseprite-mcp-live-0.1.0.aseprite-extension' --work-dir '.work/install-acceptance'
+```
+
+也可将该脚本复制到隔离目录，用新安装环境 python.exe 直接执行；脚本只依赖 SDK、Pillow 和分发产物，不导入开发目录产品源码。服务用新环境 `python -I -m aseprite_mcp`、独立 cwd 启动，probe 确认从 site-packages 导入。扩展从 ZIP 精确清单解压至全新 ASEPRITE_USER_FOLDER，测试脚本仅对自身隔离文件预授权读/写/socket，不修改个人配置或绕过实际产品调用。
+
+脚本完成未保存人工笔画、读取、整批编辑/去重、MCP ImageContent、撤销/重做像素相等、中文显式保存/覆盖拒绝、安装后公共 CLI 读写与旧工具读取、新会话拒绝旧 ID；验收使用 SDK 1.6.0 的真实 stdio 客户端。生成 acceptance.json、server-stderr.log、四幅实际收到的 PNG 与 client-gallery.html。用浏览器打开图库确认四图真实显示（64×64），截图与浏览器版本单独记录；收到数据和显示成功分别验收。
+
+全量回归仍用 `uv run --locked pytest -q --basetemp=.work/pytest-p2-final --junitxml=.work/P2-final.xml`。CI 的无 Aseprite 命令见 `.github/workflows/check.yml`；只包含模拟契约/真实 Python 子进程/本地 socket，不能代替真实 UI、干净安装或客户端显示。

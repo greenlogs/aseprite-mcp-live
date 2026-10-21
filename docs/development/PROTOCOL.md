@@ -91,7 +91,7 @@ P1-M3 已校验 PNG 并包装为 MCP ImageContent，文字元数据与图片一�
 | dedup_entries | 256 | 限制会话结果缓存数量 |
 | dedup_ttl_seconds | 120 | 提供短期确认重试窗口 |
 
-Executor 按实时会话或规范化磁盘路径串行执行，缓存相同 ID/相同请求的最终结果（包括已确认失败和结果未知），同 ID 不同内容拒绝。在 TTL 内且未被容量淘汰时返回缓存，不重复操作；断开清缓存，新会话不复用旧 id。TTL/淘汰后的请求没有去重保证，因此 RESULT_UNKNOWN 后必须先刷新文档状态，不盲目重发。核心变更 MCP 工具可显式传 request_id；省略时服务器生成 UUID。WebSocket 传输重试必须保留同一 id，不能重新生成。P1 扩展也需有对应去重与最终结果确认，Python 缓存不能替代真实编辑端防重。
+Executor 按实时会话或规范化磁盘路径串行执行，缓存相同 ID/相同请求的最终结果（包括已确认失败和结果未知），同 ID 不同内容拒绝。在 TTL 内且未被容量淘汰时返回缓存，不重复操作；断开仅清实时缓存，新会话不复用旧 id；磁盘回执不受编辑器重连影响。TTL/淘汰后的请求没有去重保证，因此 RESULT_UNKNOWN 后必须先刷新文档状态，不盲目重发。核心变更 MCP 工具可显式传 request_id；省略时服务器生成 UUID。WebSocket 传输重试必须保留同一 id，不能重新生成。P1 扩展也需有对应去重与最终结果确认，Python 缓存不能替代真实编辑端防重。
 
 ## P1-M2 结果细化
 
@@ -112,3 +112,9 @@ CLI 及旧工具的 MCP 路径在线程运行，共享规范化磁盘路径锁�
 实时批次除绘制面积外累计计算每次 Cel 图像副本的面积（包括扩张和前序操作）；超过 max_pixels 在提交前拒绝。事务逐操作检查 CPU 预算，超出后回滚；不拆成多个提交。默认 max_batch_seconds=0.25，旧扩展不实现该保护，应配套升级服务与扩展。小请求不等待其他磁盘文件，实时 UI 上的大预览仍会短暂占用主线程。仅记录 backend、排队/执行耗时到 stderr，不记录 token、请求参数或 PNG。
 
 发现文件默认使用 PID + 随机 UUID，避免强杀残留与 PID 重用冲突；不自动删除无法确认归属的固定路径文件。文件已存在、端口占用均明确启动失败，不降级 CLI。
+
+## P2-M2 版本与 SDK 错误边界
+
+发布包 0.1.0/协议 v1。hello 新增可选 extension_version；提供版本且不等于服务版本时 VERSION_MISMATCH，旧开发扩展不提供时兼容但状态显示 null，应升级配套包。状态返回 service_version 与 extension_version，实际包版本由构建器同时核对 Python 常量、pyproject、Lua 与扩展清单。
+
+MCP SDK 1.6.0 在工具异常外加 Error executing tool 前缀。ContractServer 仅在此兼容边界解包异常链中的严格 Result，保证失败 TextContent 本身是可 JSON 解码的 Result，同时保持 isError=true；参数校验失败为 INVALID_REQUEST。成功内容与工具签名不变，SDK 升级须复测该边界。

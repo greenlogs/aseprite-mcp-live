@@ -6,9 +6,9 @@
 
 ## 当前状态
 
-**P1 已验收：实时连接、未保存文档批量编辑、PNG 图片预览及撤销/重做可用；179 项测试通过。**
+**P2 已验收：实时核心、故障恢复、服务/扩展打包及 Windows 隔离安装通过；191 项回归通过。0.1.0 首版候选尚未发布。**
 
-已验证闭环：连接当前编辑器 → 读取未保存文档 → 批量编辑 → 直接返回预览 → 撤销与重做。正式打包和首版发布验收在 P2；当前以 Windows + Aseprite 1.3.7 / API 28 验收，macOS、Linux 待验证；高级动画、调色板、特效和 Tilemap 在后续阶段逐步迁移。
+已验证闭环：连接当前编辑器 → 读取未保存文档 → 批量编辑 → 直接返回预览 → 撤销与重做。本地候选包含 Python 服务和 Lua 扩展；当前以 Windows + Aseprite 1.3.7 / API 28 验收，macOS、Linux 待验证；高级动画、调色板、特效和 Tilemap 在后续阶段逐步迁移。
 
 ## 从这里开始
 
@@ -23,7 +23,9 @@
 
 ## 安装与运行
 
-开发环境可用：Python 3.13+ 和 uv，设置 `ASEPRITE_PATH` 后执行 `uv sync --locked`，以 `uv run --locked python -m aseprite_mcp` 启动 stdio 服务。具体配置、测试分层见 [测试说明](docs/TESTING.md)。默认暴露 9 个实时核心入口；扩展加载、连接配置和看图示例见 [实时开发验证](docs/TESTING.md#p1-实时使用与图片验收)。使用磁盘工具需配置 `ASEPRITE_MCP_TOOL_PROFILE=cli`。正式安装与发布验收在 P2。
+先按[Windows 安装说明](docs/INSTALL.md)安装服务 wheel、锁定依赖和 `.aseprite-extension`，配置 stdio MCP 客户端，再从扩展设置连接当前服务。默认 9 个实时入口，不隐式保存；保存、覆盖和撤销规则见安装说明。实时断线不会切换到磁盘 CLI。
+
+[故障排查](docs/TROUBLESHOOTING.md) · [测试与隔离验收](docs/TESTING.md) · [候选构建/发布边界](docs/RELEASING.md) · [贡献](CONTRIBUTING.md)。源码开发仍使用 Python 3.13+、`uv sync --locked` 和 `uv run --locked aseprite-mcp`；磁盘工具通过 cli/all 配置启用，高级旧工具不是实时能力。
 
 Aseprite 软件需由使用者自行准备，不随项目分发。版本基线及本机位置见[环境与参考资料](docs/REFERENCES.md#本地环境事实)。
 

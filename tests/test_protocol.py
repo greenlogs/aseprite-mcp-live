@@ -78,6 +78,7 @@ def test_malformed_messages(raw):
 
 def test_version_and_startup_authentication():
     for change, code in [({"protocol_version": 2}, ErrorCode.VERSION_MISMATCH),
+                         ({"extension_version": "0.0.0"}, ErrorCode.VERSION_MISMATCH),
                          ({"token": "wrong"}, ErrorCode.SESSION_MISMATCH),
                          ({"api_version": 27}, ErrorCode.UNSUPPORTED_CAPABILITY)]:
         with pytest.raises(BackendError) as error:

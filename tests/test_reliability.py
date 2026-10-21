@@ -152,6 +152,29 @@ def test_old_queued_requests_cannot_enter_new_session():
     run(scenario())
 
 
+def test_editor_reconnect_preserves_cli_write_receipt(tmp_path):
+    class Disk:
+        capabilities = CORE_CAPABILITIES
+        calls = 0
+
+        async def execute(self, request):
+            self.calls += 1
+            return Result(request_id=request.request_id, target=request.target, ok=True)
+
+    async def scenario():
+        disk = Disk()
+        executor = Executor(disk)
+        raw = json.dumps({"request_id": "disk-once", "target": {"backend": "cli", "path": str(tmp_path / "source")},
+            "action": {"name": "apply_operations", "operations": [{"op": "create_layer", "ref": "x", "name": "x"}]}})
+        first = await executor.execute(raw)
+        attach(executor, Disk())
+        executor.detach_live()
+        attach(executor, Disk(), "new-session")
+        assert await executor.execute(raw) == first
+        assert disk.calls == 1
+    run(scenario())
+
+
 def test_existing_discovery_and_port_collision_are_explicit(tmp_path, monkeypatch):
     path = tmp_path / "connection.json"
     path.write_text('{"token":"someone-else"}')

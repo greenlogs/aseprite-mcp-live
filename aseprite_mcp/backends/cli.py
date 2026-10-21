@@ -23,6 +23,8 @@ class CliBackend:
         return await asyncio.to_thread(self._execute, request)
 
     def _execute(self, request: Request) -> Result:
+        if not isinstance(request.target, CliTarget):
+            raise BackendError(ErrorCode.INVALID_TARGET, "CLI requires a disk target")
         with disk_access([request.target.path], timeout=self.limits.timeout_seconds):
             return self._execute_locked(request)
 

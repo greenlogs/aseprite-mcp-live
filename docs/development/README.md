@@ -51,3 +51,5 @@ P0 建立正式测试说明，P2 建立安装、故障排查和发布说明；�
 P2 是首发交付点。发布验收通过只表示产物可发布；不自动创建 GitHub 仓库、不推送、不发布 Release。P3 首先复核上游与需求，再确定高级能力批次。
 
 已建立：[正式测试说明](../TESTING.md)、[贡献入口](../../CONTRIBUTING.md)、[第三方来源](../THIRD_PARTY.md)。
+
+P2 已建立：[Windows 安装](../INSTALL.md)、[故障排查](../TROUBLESHOOTING.md)、[候选构建与发布边界](../RELEASING.md)。真实隔离安装和 Windows CI 契约命令分别见 TESTING；CI 不替代 GUI 验收。

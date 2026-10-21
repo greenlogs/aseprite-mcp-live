@@ -1,0 +1,33 @@
+# 本地候选构建与发布检查
+
+本文件说明可重复构建和验收，不授权上传、推送或发布 Release。本项目尚无远程仓库/下载地址，不能用参考上游地址代替。
+
+## 构建入口
+
+```powershell
+uv sync --locked --python 3.13
+uv run --locked python scripts/check_docs.py
+uv run --locked python scripts/build_release.py --out-dir dist
+uv run --locked python scripts/build_release.py --out-dir dist --check-only
+```
+
+0.1.0 候选包含 wheel、源码 tar.gz、`.aseprite-extension`、生产依赖 requirements.txt、manifest.json 和 SHA256SUMS。扩展为确定时间戳、排序后的 ZIP，根部直接为 manifest/四个 Lua/许可与 NOTICE；构建器核对 manifest、Lua 握手和 Python 服务版本对应协议 v1。requirements.txt 来自 uv.lock，不包含源码编辑安装或开发依赖。
+
+wheel 只含 aseprite_mcp 包、元数据及 MIT 许可，必须包含 backends/cli.lua 和 stdio 脚本入口。源码包白名单包含源码/扩展/测试/构建脚本/文档/锁文件，保留上游来源及许可。构建器逐一检查包清单，拒绝本地软件、可执行程序、个人 .env/.codex/.agents、恢复会话和缓存；本地 Aseprite/ 不分发。扩展 NOTICE 记录上游固定提交，未打包字体/图片资源；Python 依赖按各自许可从包索引安装，不打入本项目 wheel。
+
+## 验收顺序
+
+1. 运行全量真实 Windows 回归（含 CLI 与 UI），失败则撤回相关勾选。
+2. 按[安装文档](INSTALL.md)用分发包建立全新 uv 环境；不可 editable 安装，不给服务设置源码 PYTHONPATH。真实服务应从 site-packages 导入。
+3. 按[隔离验收](TESTING.md#p2-隔离安装与阶段集成)从扩展 ZIP 安装到全新配置目录，真实 MCP SDK 客户端完成未保存文档、批次/去重、图片、撤销/重做、中文保存、覆盖拒绝、CLI 与重连；用浏览器实际渲染收到的图片并检查截图。
+4. 核对全部 Markdown 链接、结构入口与安装命令；重新构建最终分发包，确认最后代码对应已安装验收的包，更新阶段交接和清单摘要。
+
+`.github/workflows/check.yml` 为 Windows 的模拟契约/进程故障、文档检查与打包工作流。它没有 Aseprite，也不执行 GUI 验收；此阶段仅在本地复现同样命令，未上传或运行 GitHub Actions，不宣称远程 CI 已通过。
+
+已验收平台只能写 Windows Aseprite 1.3.7/API 28。客户端验收使用 Python MCP SDK 1.6.0 与 HTML 图片视图，不能写成其他客户端均兼容。旧高级工具不自动获得实时支持；能力边界见[README](../README.md)与[协议](development/PROTOCOL.md)。
+
+## 候选与发布状态
+
+本次构建、干净安装与阶段集成结果以 [P2-M2 交接](progress/P2-M2.md) 和 [P2 总结](progress/P2.md) 为准；构建成功本身不足以认定可发布。维护者未来获得当次远程授权后，再设置仓库地址、上传审核后的相同摘要文件及说明。没有自动发布步骤。
+
+2026-10-21 本地结论：0.1.0/协议 v1 候选已完成 Windows 隔离安装、真实 MCP 图片与阶段集成验收，191 项回归通过；尚未发布，也未执行远程 CI。实际候选及摘要保留 .work/release，结果详见 P2-M2 交接。

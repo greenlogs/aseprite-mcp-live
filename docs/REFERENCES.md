@@ -59,3 +59,7 @@ P0-M2 复核：真实公共 CLI 路径返回 `api_version=28`、软件 1.3.7；�
 ## P1 实际环境复核（2026-10-21）
 
 Python 3.13.15、MCP SDK 1.6.0、websockets 15.0.1、真实 Aseprite 1.3.7 / API 28。最终全量回归 179 passed（52.62s），实时内存文档/事务/撤销/PNG 及 CLI 均通过。客户端采用 Python MCP SDK 1.6.0 与接收图片的 HTML 视图，Edge 155.0.4283.62 实际显示四图。版本与测试分类见 [P1-M3](progress/P1-M3.md)，其他平台未验证。
+
+## P2 实际环境复核（2026-10-21）
+
+Windows NT 10.0.26200.0、uv 0.12.3、Python 3.13.15、MCP SDK 1.6.0、Aseprite 1.3.7/API 28；191 项回归通过。独立 uv 环境从 wheel 安装，扩展 ZIP 解压到隔离配置，双 stdio 启动入口及真实图片闭环通过；Edge 155.0.4283.62 显示核验。0.1.0/协议 v1 首版候选已验收未发布，详见 [P2-M2](progress/P2-M2.md)。本机软件路径仍仅见本文件前表。

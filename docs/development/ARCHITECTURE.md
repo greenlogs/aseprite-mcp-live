@@ -107,3 +107,9 @@ preview.lua 用独立 RGB Image.drawSprite 合成帧/区域，在内存中生成
 Executor 使用按会话/磁盘路径的独立队列与受 shield 保护的任务，取消调用方只取消等待；执行中去重和最终缓存共用 ID/摘要规则。旧会话完成不污染新缓存，迟到确认丢弃；未知写入先读状态后决策。CLI 和旧 MCP 工具共享有限期线程磁盘锁，旧函数在 worker 内运行；高级旧工具的原子性与文件摘要不因此获得升级。
 
 CLI 公共 Request 新增可选 expected_file_revision，data.file_revision 为 SHA-256；执行前和提交前比较，保留不传字段的兼容。仍不提供外部进程的文件锁。实时 Cel 副本面积累计上限和 0.25 秒事务 CPU 预算保护 UI，预算失败整批回滚。协议/错误/取消细节见 PROTOCOL 的 P2 补充。默认发现路径追加 UUID；固定路径残留由使用者确认旧服务退出后处理。
+
+## P2-M2 分发与版本
+
+hatch wheel 只包含服务包/资源，sdist 使用显式白名单。scripts/build_release.py 从同一工作区建立服务包、根部 manifest 的扩展 ZIP、锁定生产依赖与摘要；scripts/verify_install.py 不导入开发源码，从独立 site-packages 和新扩展配置执行真实 MCP 验收。默认用户入口为安装环境 aseprite-mcp 可执行脚本；独立 python -I -m 入口同样可用。
+
+服务/扩展 0.1.0、协议 v1；扩展上报可选 extension_version 并校验已提供的版本。ContractServer 封装 SDK 1.6.0 错误包装兼容点，保留 JSON Result 与 MCP isError 的一致性。CI 只覆盖无 Aseprite 契约、文档与分发检查，真实 Windows GUI 验收单独记录，不包含远程发布动作。

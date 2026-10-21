@@ -15,7 +15,32 @@ from .backends.live import LiveBridge
 from .core.config import RuntimeConfig
 from .core.execution import Executor
 from .core.legacy import worker_tool
-from .core.protocol import BackendError, ErrorCode, PngPayload, failure
+from .core.protocol import BackendError, ErrorCode, PngPayload, Result, failure
+
+
+class ContractServer(FastMCP):
+    """Keep structured failures intact across MCP 1.6.0's ToolError wrapping."""
+
+    async def call_tool(self, name, arguments):
+        try:
+            return await super().call_tool(name, arguments)
+        except ToolError as exc:
+            cause = exc
+            while cause is not None:
+                if isinstance(cause, ToolError):
+                    try:
+                        result = Result.model_validate_json(str(cause))
+                    except ValidationError:
+                        pass
+                    else:
+                        if not result.ok:
+                            raise ToolError(result.model_dump_json()) from exc
+                if isinstance(cause, ValidationError):
+                    raise ToolError(failure(None, BackendError(ErrorCode.INVALID_REQUEST,
+                        "Invalid tool arguments")).model_dump_json()) from exc
+                cause = cause.__cause__
+            raise ToolError(failure(None, BackendError(ErrorCode.EXECUTION_FAILED,
+                str(exc))).model_dump_json()) from exc
 
 
 def create_server(profile: str | None = None) -> FastMCP:
@@ -35,7 +60,7 @@ def create_server(profile: str | None = None) -> FastMCP:
         else:
             yield {}
 
-    server = FastMCP("aseprite", lifespan=lifespan)
+    server = ContractServer("aseprite", lifespan=lifespan)
 
     async def dispatch(action, session_id, document_id=None, expected_revision=None,
                        expected_context=None, request_id=None):

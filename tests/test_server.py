@@ -48,7 +48,10 @@ def test_stdio_enumeration_and_mcp_error_flag(tmp_path):
                 assert json.loads(status.content[0].text)["connected"] is False
                 result = await session.call_tool("get_document_info", {"session_id": "s", "document_id": "d"})
                 assert result.isError
-                assert "NOT_CONNECTED" in result.content[0].text
+                error = json.loads(result.content[0].text)
+                assert error["error"]["code"] == "NOT_CONNECTED" and not error["ok"]
+                invalid = await session.call_tool("get_document_info", {"session_id": "s"})
+                assert invalid.isError and json.loads(invalid.content[0].text)["error"]["code"] == "INVALID_REQUEST"
         # Flush Windows proactor callbacks before asyncio.run closes the loop.
         gc.collect()
         await asyncio.sleep(0.05)

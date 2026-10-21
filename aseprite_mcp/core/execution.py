@@ -40,12 +40,18 @@ class Executor:
             raise BackendError(ErrorCode.SESSION_MISMATCH, "An editor is already attached")
         self.live, self.session_id = backend, hello.session_id
         self.live_capabilities = capabilities & backend.capabilities
-        self._cache.clear()
+        self._clear_live_cache()
 
     def detach_live(self):
         self.live, self.session_id = None, None
         self.live_capabilities = frozenset()
-        self._cache.clear()
+        self._clear_live_cache()
+
+    def _clear_live_cache(self):
+        # Reconnecting the editor must not remove disk-write receipts.
+        for key in list(self._cache):
+            if key[0] == "live":
+                del self._cache[key]
 
     async def execute(self, raw: str | bytes) -> Result:
         request = None

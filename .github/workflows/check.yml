@@ -1,0 +1,19 @@
+name: Contracts and packages
+on: [push, pull_request, workflow_dispatch]
+jobs:
+  check:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: '0.12.3'
+      - run: uv sync --locked --python 3.13
+      - name: Contracts and injected failures (no Aseprite)
+        run: uv run --locked pytest -q tests/test_protocol.py tests/test_reliability.py tests/test_live_bridge.py tests/test_cli_backend.py tests/test_server.py -m "not real" -k "not real_cli" --basetemp=.work/ci --junitxml=.work/ci.xml
+      - run: uv run --locked python scripts/check_docs.py
+      - run: uv run --locked python scripts/build_release.py --out-dir dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: local-release-candidate
+          path: dist/*
