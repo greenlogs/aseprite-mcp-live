@@ -14,7 +14,8 @@ from .backends.cli import CliBackend
 from .backends.live import LiveBridge
 from .core.config import RuntimeConfig
 from .core.execution import Executor
-from .core.protocol import BackendError, PngPayload
+from .core.legacy import worker_tool
+from .core.protocol import BackendError, ErrorCode, PngPayload, failure
 
 
 def create_server(profile: str | None = None) -> FastMCP:
@@ -88,9 +89,11 @@ def create_server(profile: str | None = None) -> FastMCP:
                 png = PngPayload.model_validate(result["data"]["png"])
                 raw = png.decode(config.limits)
             except BackendError as exc:
-                raise ToolError(f"{exc.code}: {exc.message}") from exc
+                result.update(ok=False, data=None, error={"code": exc.code.value, "message": exc.message})
+                raise ToolError(json.dumps(result)) from exc
             except (ValidationError, KeyError, TypeError) as exc:
-                raise ToolError("INVALID_REQUEST: Invalid editor PNG payload") from exc
+                result.update(ok=False, data=None, error={"code": "INVALID_REQUEST", "message": "Invalid editor PNG payload"})
+                raise ToolError(json.dumps(result)) from exc
             # Keep metadata once, without duplicating base64 in text content.
             metadata = png.model_dump(mode="json", exclude={"data"})
             result["data"] = {"png": metadata}
@@ -124,14 +127,15 @@ def create_server(profile: str | None = None) -> FastMCP:
         # seam in one place and verify schemas/calls during upgrades.
         for tool in upstream_registry._tool_manager.list_tools():
             if tool.name != "run_lua_script" or os.getenv("ASEPRITE_MCP_ENABLE_RAW_LUA") == "1":
-                server.add_tool(tool.fn, name=tool.name, description=tool.description)
+                server.add_tool(worker_tool(tool.fn), name=tool.name, description=tool.description)
 
         @server.tool()
         async def cli_execute(request: dict) -> dict:
             """协议 v1 磁盘读取/批量绘制；目标必须明确为 cli。"""
             target = request.get("target")
             if not isinstance(target, dict) or target.get("backend") != "cli":
-                raise ToolError("INVALID_TARGET: cli_execute requires a CLI target")
+                raise ToolError(failure(None, BackendError(ErrorCode.INVALID_TARGET,
+                    "cli_execute requires a CLI target")).model_dump_json())
             result = await executor.execute(json.dumps(request))
             if not result.ok:
                 raise ToolError(result.model_dump_json())

@@ -6,7 +6,7 @@
 
 模块结束：按[交接模板](docs/development/MODULE_REPORT_TEMPLATE.md)生成 `docs/progress/<模块编号>.md`，同步阶段总结与本文件；涉及结构变化时同步[项目结构](docs/PROJECT_STRUCTURE.md)。已验收开发模块默认本地提交，不推送。阶段结束另做集成验收。
 
-当前任务：[P2-M1 · 错误与状态管理](docs/development/prompts/P2-稳定性与首版发布.md#p2-m1)。前置：P1 全部模块及阶段集成已验收。
+当前任务：[P2-M2 · 安装打包及发布验收](docs/development/prompts/P2-稳定性与首版发布.md#p2-m2)。前置：P2-M1 故障与真实编辑器恢复已验收。
 
 ## P0 · 项目基础
 
@@ -25,9 +25,9 @@
 
 ## P2 · 稳定性与首版发布
 
-提示词：[P2](docs/development/prompts/P2-稳定性与首版发布.md)。总结：P1 集成已通过，可靠性加固及安装发布验收尚未开始；[完整总结](docs/progress/P2.md)。
+提示词：[P2](docs/development/prompts/P2-稳定性与首版发布.md)。总结：可靠性加固及真实恢复已验收；安装打包和干净客户端验收进行中；[完整总结](docs/progress/P2.md)。
 
-- [ ] [P2-M1 · 错误与状态管理](docs/development/prompts/P2-稳定性与首版发布.md#p2-m1)
+- [x] [P2-M1 · 错误与状态管理](docs/development/prompts/P2-稳定性与首版发布.md#p2-m1)
 - [ ] [P2-M2 · 安装打包及发布验收](docs/development/prompts/P2-稳定性与首版发布.md#p2-m2)
 
 ## P3 · 高级能力迁移

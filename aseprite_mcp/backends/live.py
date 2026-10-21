@@ -8,6 +8,7 @@ import logging
 import os
 from pathlib import Path
 import tempfile
+from uuid import uuid4
 
 from pydantic import ValidationError
 from websockets.asyncio.server import serve
@@ -51,7 +52,7 @@ class LiveBridge:
         self.hello: Handshake | None = None
         self.url: str | None = None
         self.connection_file = Path(os.getenv("ASEPRITE_MCP_CONNECTION_FILE") or
-                                    Path(tempfile.gettempdir()) / f"aseprite-mcp-{os.getpid()}.json")
+                                    Path(tempfile.gettempdir()) / f"aseprite-mcp-{os.getpid()}-{uuid4().hex}.json")
 
     def status(self):
         hello = self.hello
@@ -72,7 +73,10 @@ class LiveBridge:
             self.url = f"ws://{host}:{server.sockets[0].getsockname()[1]}"
             try:
                 # Exclusive creation prevents replacing another process's discovery file.
-                fd = os.open(self.connection_file, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+                try:
+                    fd = os.open(self.connection_file, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+                except FileExistsError as exc:
+                    raise RuntimeError("Connection file already exists; select a new path or confirm the old server has exited before removing it") from exc
                 with os.fdopen(fd, "w", encoding="utf-8") as stream:
                     json.dump({"url": self.url, "token": self.config.token}, stream)
                 log.warning("Live connection file: %s", self.connection_file)

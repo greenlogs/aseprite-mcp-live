@@ -8,6 +8,7 @@ import secrets
 import tempfile
 
 from ..core.commands import AsepriteCommand
+from ..core.files import disk_access
 from ..core.protocol import BackendError, CliTarget, ErrorCode, Limits, Request, Result, check_limits
 
 
@@ -22,6 +23,10 @@ class CliBackend:
         return await asyncio.to_thread(self._execute, request)
 
     def _execute(self, request: Request) -> Result:
+        with disk_access([request.target.path], timeout=self.limits.timeout_seconds):
+            return self._execute_locked(request)
+
+    def _execute_locked(self, request: Request) -> Result:
         check_limits(request, self.limits)
         if not isinstance(request.target, CliTarget):
             raise BackendError(ErrorCode.INVALID_TARGET, "CLI requires a disk target")
@@ -34,10 +39,10 @@ class CliBackend:
         mutating = request.action.name == "apply_operations"
         # Stage mutations on the same volume, so os.replace is atomic.
         try:
-            original_digest = None
-            if mutating:
-                with source.open("rb") as stream:
-                    original_digest = hashlib.file_digest(stream, "sha256").digest()
+            with source.open("rb") as stream:
+                original_digest = hashlib.file_digest(stream, "sha256").hexdigest()
+            if request.expected_file_revision is not None and request.expected_file_revision != original_digest:
+                raise BackendError(ErrorCode.CONTEXT_CONFLICT, "Disk file changed since it was read; refresh file_revision")
             with tempfile.TemporaryDirectory(prefix="aseprite-mcp-", dir=source.parent if mutating else None) as scratch:
                 root = Path(scratch)
                 payload, receipt, artifact = root / "request.json", root / "result.json", root / "edited.aseprite"
@@ -66,6 +71,9 @@ class CliBackend:
                         raise ValueError("Missing document data")
                 except (ValueError, KeyError, TypeError, AttributeError) as exc:
                     raise BackendError(ErrorCode.EXECUTION_FAILED, "Malformed execution receipt") from exc
+                with source.open("rb") as stream:
+                    if hashlib.file_digest(stream, "sha256").hexdigest() != original_digest:
+                        raise BackendError(ErrorCode.CONTEXT_CONFLICT, "Disk file changed during execution")
                 if mutating:
                     if not artifact.is_file() or artifact.stat().st_size < 128:
                         raise BackendError(ErrorCode.EXECUTION_FAILED, "Missing fresh output artifact")
@@ -74,9 +82,12 @@ class CliBackend:
                     if header[4:6] != b"\xe0\xa5":
                         raise BackendError(ErrorCode.EXECUTION_FAILED, "Invalid Aseprite output artifact")
                     with source.open("rb") as stream:
-                        if hashlib.file_digest(stream, "sha256").digest() != original_digest:
+                        if hashlib.file_digest(stream, "sha256").hexdigest() != original_digest:
                             raise BackendError(ErrorCode.CONTEXT_CONFLICT, "Disk file changed during execution")
+                    with artifact.open("rb") as stream:
+                        original_digest = hashlib.file_digest(stream, "sha256").hexdigest()
                     os.replace(artifact, source)
+                data["file_revision"] = original_digest
                 return Result(request_id=request.request_id, ok=True, target=request.target, data=data)
         except OSError as exc:
             raise BackendError(ErrorCode.EXECUTION_FAILED, str(exc)) from exc

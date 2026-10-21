@@ -1,6 +1,6 @@
 # 动态项目结构
 
-最近复核：2026-10-21，P1-M3 预览与阶段集成验收。结构说明唯一来源；实际与规划分开。
+最近复核：2026-10-21，P2-M1 故障与状态管理。结构说明唯一来源；实际与规划分开。
 
 ## 实际结构
 
@@ -19,7 +19,9 @@ aseprite-mcp/
 │  │  ├─ commands.py         上游进程/脚本执行；UTF-8、超时及错误
 │  │  ├─ protocol.py         v1 请求、批次、目标、结果、PNG、握手与上限类型
 │  │  ├─ config.py           回环端点配置、随机启动 token 和环境上限
-│  │  ├─ execution.py        Backend 接口、显式路由、单会话、串行与去重
+│  │  ├─ execution.py        Backend 接口、按资源队列、取消后确认、会话及去重
+│  │  ├─ files.py            CLI/旧工具共享的有限期线程磁盘锁
+│  │  ├─ legacy.py           旧 MCP CLI 工具的 worker 包装及失败映射
 │  │  ├─ lua.py              上游可复用 Lua 片段
 │  │  ├─ colors.py           颜色解析
 │  │  ├─ fonts.py            字体发现及光栅化
@@ -40,6 +42,7 @@ aseprite-mcp/
 ├─ tests/
 │  ├─ conftest.py            平台临时目录和每模块画布夹具
 │  ├─ test_environment.py    上游工具枚举、中文路径与真实像素核对
+│  ├─ test_reliability.py   取消/断线/迟到回执/磁盘修订及真实 UI 故障恢复
 │  ├─ test_protocol.py       协议、错误映射、模拟 live、去重与样例
 │  ├─ test_cli_backend.py    真实 CLI 纵向路径与进程/产物故障模拟
 │  ├─ live_support.py        独立 UI 进程与仅测试使用的手工动作控制夹具
@@ -88,7 +91,7 @@ aseprite-mcp/
 | 公共 CLI 路径 | Python Executor.execute(JSON) 或 CLI 配置的 MCP cli_execute |
 | 构建 | `uv build --out-dir .work/build`；hatchling；包资源已检查，P2 发布/干净安装验收未执行 |
 | 扩展加载 | extension/package.json → main.lua init/exit；设置对话框选择服务发现 JSON；core/all lifespan 监听 |
-| 下一模块 | [P2-M1](development/prompts/P2-稳定性与首版发布.md#p2-m1) |
+| 下一模块 | [P2-M2](development/prompts/P2-稳定性与首版发布.md#p2-m2) |
 
 ## 规划结构：尚未实现
 
@@ -106,3 +109,5 @@ P0-M1 导入上游源码、测试和环境入口；P0-M2 增加协议/配置/执
 2026-10-21 P1-M2：新增 editor.lua、live_support.py 和 test_live_editor.py；实时文档注册、事件修订、事务/历史/原生保存已真实验证。
 
 2026-10-21 P1-M3：新增 preview.lua 与 test_live_preview.py；独立图像内存编码 PNG，MCP 返回图片内容，实际客户端图片渲染及 179 项全量回归通过。清理重复测试目录，保留 .work/p1-evidence 四图/截图/测量及验收日志。
+
+2026-10-21 P2-M1：新增 core/files.py、core/legacy.py 与 test_reliability.py；执行器按资源排队并保留取消后回执，CLI 摘要契约/输出解码、事务 CPU/复制预算与随机发现路径已实现并真实验证。

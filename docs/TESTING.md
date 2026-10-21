@@ -72,3 +72,8 @@ uv run --locked pytest -q --basetemp=.work/pytest-p1-final --junitxml=.work/P1-f
 test_live_preview 以真实 MCP SDK 1.6.0 stdio 客户端完成闭环，在对应 pytest 临时目录生成 before/after/undo/redo PNG、client-gallery.html 和 client-evidence.json。用浏览器打开 HTML 确认实际显示；本次 Edge 155.0.4283.62 已实际渲染、截图并检查四图 64×64。像素、协议收到图片和显示成功是分开的验收步骤。最终本地证据保留于 .work/p1-evidence；不将临时图片/配置/凭据入库。
 
 SDK 1.6.0 的 Windows 客户端退出会强杀 stdio 子进程，可能留下发现文件；正常服务退出会清理。默认发现文件每进程独立；使用固定 ASEPRITE_MCP_CONNECTION_FILE 时，若重启提示文件已存在，先确认旧服务已退出，再移除这一个残留 JSON 并重启。不要删除仍在使用的连接配置。异常退出策略和正式安装在 P2 继续验收。
+
+## P2-M1 故障回归
+
+`uv run --locked pytest -q tests/test_reliability.py --basetemp=.work/pytest-reliability`。
+前十个用例覆盖真实 socket 的模拟编辑器、取消/迟到/重复/旧会话/磁盘冲突及实际 Python 子进程清理；标记 real 的最后用例使用真实 UI 验证事件风暴、人工切换/修改/撤销、事务超预算回滚及执行后丢回执。完整上游与实时回归仍使用全文的全量命令。发现文件默认加随机 UUID；固定路径不自动清理残留。

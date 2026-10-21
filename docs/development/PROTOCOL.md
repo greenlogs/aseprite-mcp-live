@@ -53,7 +53,7 @@ info 的 data 提供 width、height、color_mode、frames 数量、layers（id/n
 | RESULT_UNKNOWN | 实时变更超时/断连/无匹配确认，可能已经发生 |
 | REQUEST_CONFLICT | 同一 request_id 携带不同请求 |
 
-公共执行错误和新增 MCP 核心/cli_execute 工具使用结构化错误，MCP 通过 ToolError 转成 `isError: true`。为保留上游调用兼容，115 个旧 CLI 工具仍返回原来的文本结果；它们尚未全部迁移到公共执行层，不承诺具备新适配器的回执/原子提交保证，P3 按清单迁移。
+公共执行错误和新增 MCP 核心/cli_execute 工具使用结构化错误，MCP 通过 ToolError 转成 `isError: true`。为保留上游调用兼容，115 个旧 CLI 工具成功时保留原来的文本结果，常见 Failed/ERROR/Invalid/Script failed 失败转为结构化 MCP isError；它们尚未全部迁移到公共执行层，不承诺具备新适配器的回执/原子提交保证，P3 按清单迁移。
 
 ## 批次、坐标和传参
 
@@ -86,11 +86,12 @@ P1-M3 已校验 PNG 并包装为 MCP ImageContent，文字元数据与图片一�
 | max_operations | 256 | 限制 UI 一次事务工作量 |
 | max_pixels | 262144（512×512） | 单批绘制、画布创建与预览输出预算 |
 | max_png_bytes | 4 MiB | 限制编码图像传输体积 |
+| max_batch_seconds | 0.25 | 实时原子事务 CPU 预算，超出时整批回滚 |
 | timeout_seconds | 30 | 防止 CLI 挂起；不表示编辑 30 秒可接受 |
 | dedup_entries | 256 | 限制会话结果缓存数量 |
 | dedup_ttl_seconds | 120 | 提供短期确认重试窗口 |
 
-Executor 串行执行，缓存相同 ID/相同请求的最终结果（包括已确认失败和结果未知），同 ID 不同内容拒绝。在 TTL 内且未被容量淘汰时返回缓存，不重复操作；断开清缓存，新会话不复用旧 id。TTL/淘汰后的请求没有去重保证，因此 RESULT_UNKNOWN 后必须先刷新文档状态，不盲目重发。核心变更 MCP 工具可显式传 request_id；省略时服务器生成 UUID。WebSocket 传输重试必须保留同一 id，不能重新生成。P1 扩展也需有对应去重与最终结果确认，Python 缓存不能替代真实编辑端防重。
+Executor 按实时会话或规范化磁盘路径串行执行，缓存相同 ID/相同请求的最终结果（包括已确认失败和结果未知），同 ID 不同内容拒绝。在 TTL 内且未被容量淘汰时返回缓存，不重复操作；断开清缓存，新会话不复用旧 id。TTL/淘汰后的请求没有去重保证，因此 RESULT_UNKNOWN 后必须先刷新文档状态，不盲目重发。核心变更 MCP 工具可显式传 request_id；省略时服务器生成 UUID。WebSocket 传输重试必须保留同一 id，不能重新生成。P1 扩展也需有对应去重与最终结果确认，Python 缓存不能替代真实编辑端防重。
 
 ## P1-M2 结果细化
 
@@ -99,3 +100,15 @@ Executor 串行执行，缓存相同 ID/相同请求的最终结果（包括已�
 ## P1-M3 图片实现
 
 扩展按 v1 data.png 发送 base64；MCP 层返回 TextContent(Result 元数据、png 去掉 data 字段) 与 ImageContent(image/png) 两块。PNG region 填实际区域，完整画布也显式给出原点/尺寸。Lua 内存编码采用存储型 deflate，事先以行字节数和块开销估算体积；消息预留 2048 字节元数据开销，因此很小的自定义消息上限可能提前拒绝。无需临时文件，不改变文档、上下文或历史。
+
+## P2-M1 故障与兼容补充
+
+协议版本仍为 1；新增可选 `expected_file_revision`（64 位小写 SHA-256，仅 CLI）。CLI info/apply 成功 data 新增 `file_revision`，调用方应在下一次修改中回传；不传时保持旧调用兼容，但只检查执行期间变化。外部写入无跨进程强制锁，最终比较与替换之间仍有短竞态；编辑器正在编辑的文件不要同时交给 CLI。旧工具未迁移摘要/nonce 事务契约，需独占目标文件；高级迁移在 P3。
+
+已接收任务不因 MCP 调用方取消而取消；相同 ID 在执行中合并等待，内容冲突立即拒绝。排队超时为 TIMEOUT，明确未发送；实时写入发送后的超时/断线为 RESULT_UNKNOWN。迟到或重复回执不重新执行，不把未知结果改写成成功。当前会话内缓存仍受 120 秒/256 条限制，过期、淘汰或重连后不得依赖旧 ID 重发。请求队列最多 256 个不同 ID；满时 LIMIT_EXCEEDED。重连后排队旧请求失败，旧会话完成结果不写入新会话缓存。
+
+CLI 及旧工具的 MCP 路径在线程运行，共享规范化磁盘路径锁；锁等待有期限，CLI 自己的 subprocess.run 终止并等待超时进程。Windows 输出先捕获 bytes 再严格 UTF-8 解码，避免读取线程异常被误判成功。非零退出保留返回码与 stderr/stdout；原始 Lua/旧工具仍保留兼容限制。直接导入旧 Python 函数不经过 MCP worker 包装。
+
+实时批次除绘制面积外累计计算每次 Cel 图像副本的面积（包括扩张和前序操作）；超过 max_pixels 在提交前拒绝。事务逐操作检查 CPU 预算，超出后回滚；不拆成多个提交。默认 max_batch_seconds=0.25，旧扩展不实现该保护，应配套升级服务与扩展。小请求不等待其他磁盘文件，实时 UI 上的大预览仍会短暂占用主线程。仅记录 backend、排队/执行耗时到 stderr，不记录 token、请求参数或 PNG。
+
+发现文件默认使用 PID + 随机 UUID，避免强杀残留与 PID 重用冲突；不自动删除无法确认归属的固定路径文件。文件已存在、端口占用均明确启动失败，不降级 CLI。

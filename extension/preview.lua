@@ -38,6 +38,7 @@ local function base64(raw)
   return table.concat(parts)
 end
 function M.render(sprite,action,limits)
+  local started=os.clock()
   if not sprite.frames[action.frame] then fail("INVALID_TARGET","Unknown preview frame") end
   local region=action.region or {x=0,y=0,width=sprite.width,height=sprite.height}
   if region.x<0 or region.y<0 or region.width<1 or region.height<1 or
@@ -54,6 +55,7 @@ function M.render(sprite,action,limits)
   end
   local image=Image(region.width,region.height,ColorMode.RGB)
   image:drawSprite(sprite,action.frame,Point(-region.x,-region.y))
+  local rendered=os.clock()
   local rows={}
   for y=0,region.height-1 do
     local row={"\0"}
@@ -68,6 +70,7 @@ function M.render(sprite,action,limits)
     chunk("IDAT",deflate(raw))..chunk("IEND","")
   if #png>limits.max_png_bytes then fail("LIMIT_EXCEEDED","PNG too large; reduce region or scale") end
   local encoded=base64(png)
+  M.last_timing={render_ms=(rendered-started)*1000,encode_ms=(os.clock()-rendered)*1000}
   if #encoded+2048>limits.max_message_bytes then fail("LIMIT_EXCEEDED","Message too large; reduce region or scale") end
   return {png={mime_type="image/png",encoding="base64",data=encoded,width=width,height=height,
     frame=action.frame,scale=scale,region=region}}

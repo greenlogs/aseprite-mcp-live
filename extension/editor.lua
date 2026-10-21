@@ -132,6 +132,7 @@ function M.new(limits,preview)
     if sprite.colorMode~=ColorMode.RGB then fail("UNSUPPORTED_CAPABILITY","Editing requires RGB") end
     if #operations>limits.max_operations then fail("LIMIT_EXCEEDED","Too many operations") end
     local refs,pixels={},0
+    local copies={}; local allocated=0
     for _,op in ipairs(operations) do
       if op.op=="create_layer" then
         if refs[op.ref] then fail("INVALID_REQUEST","Duplicate layer reference") end
@@ -148,17 +149,24 @@ function M.new(limits,preview)
             fail("INVALID_REQUEST","Coordinates exceed canvas")
           end
           pixels=pixels+w*h
+          local key=tostring(layer)..":"..op.frame
+          local previous=copies[key]
+          local left,top,right,bottom=op.x,op.y,op.x+w,op.y+h
+          if previous then
+            left=math.min(left,previous[1]);top=math.min(top,previous[2])
+            right=math.max(right,previous[3]);bottom=math.max(bottom,previous[4])
+          end
           if type(layer)~="table" then
             local cel=layer:cel(op.frame)
             if cel then
-              local left,top=math.min(cel.position.x,op.x),math.min(cel.position.y,op.y)
-              local right=math.max(cel.position.x+cel.image.width,op.x+w)
-              local bottom=math.max(cel.position.y+cel.image.height,op.y+h)
-              if (right-left)*(bottom-top)>limits.max_pixels then
-                fail("LIMIT_EXCEEDED","Expanded Cel exceeds pixel budget")
-              end
+              left=math.min(left,cel.position.x);top=math.min(top,cel.position.y)
+              right=math.max(right,cel.position.x+cel.image.width)
+              bottom=math.max(bottom,cel.position.y+cel.image.height)
             end
           end
+          copies[key]={left,top,right,bottom}
+          allocated=allocated+(right-left)*(bottom-top)
+          if allocated>limits.max_pixels then fail("LIMIT_EXCEEDED","Batch image copies exceed pixel budget") end
         elseif op.op~="set_opacity" then fail("INVALID_REQUEST","Unknown operation") end
       end
     end
@@ -224,13 +232,21 @@ function M.new(limits,preview)
     local sprite=record.object
     if action.name=="get_document_info" then return self:info(record),record
     elseif action.name=="get_preview" and preview then
-      return preview.render(sprite,action,limits),record
+      local value=preview.render(sprite,action,limits)
+      self.preview_timing=preview.last_timing
+      return value,record
     elseif action.name=="apply_operations" then
       self:validate(record,action.operations)
       local refs={}
       self:with_target(sprite,function()
         app.transaction("MCP batch",function()
-          for _,op in ipairs(action.operations) do self:apply_one(record,op,refs) end
+          local started=os.clock()
+          for _,op in ipairs(action.operations) do
+            self:apply_one(record,op,refs)
+            if os.clock()-started>(limits.max_batch_seconds or 0.25) then
+              fail("LIMIT_EXCEEDED","Atomic batch exceeded CPU budget; reduce batch size")
+            end
+          end
         end)
       end)
       self:sync()

@@ -54,6 +54,7 @@ class Limits(Model):
     max_pixels: Positive = 262144
     max_png_bytes: Positive = 4 * 1024 * 1024
     timeout_seconds: Annotated[float, Field(gt=0)] = 30.0
+    max_batch_seconds: Annotated[float, Field(gt=0)] = 0.25
     dedup_entries: Positive = 256
     dedup_ttl_seconds: Annotated[float, Field(gt=0)] = 120.0
 
@@ -204,10 +205,13 @@ class Request(Model):
     action: Action
     expected_revision: NonNegative | None = None
     expected_context: NonNegative | None = None
+    expected_file_revision: Annotated[str, Field(pattern=r"^[0-9a-f]{64}$")] | None = None
 
     @model_validator(mode="after")
     def check_target(self):
         if isinstance(self.target, LiveTarget):
+            if self.expected_file_revision is not None:
+                raise ValueError("File revisions apply only to CLI targets")
             document_action = self.action.name not in {"list_documents", "create_sprite"}
             if document_action != (self.target.document_id is not None):
                 raise ValueError("Explicit document target required only for document operations")

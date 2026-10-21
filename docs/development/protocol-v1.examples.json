@@ -28,7 +28,8 @@
       "max_png_bytes": 4194304,
       "timeout_seconds": 30.0,
       "dedup_entries": 256,
-      "dedup_ttl_seconds": 120.0
+      "dedup_ttl_seconds": 120.0,
+      "max_batch_seconds": 0.25
     }
   },
   "requests": [
@@ -129,6 +130,24 @@
       "action": {
         "name": "get_document_info"
       }
+    },
+    {
+      "request_id": "disk-edit-1",
+      "target": {
+        "backend": "cli",
+        "path": "C:/work/sprite.aseprite"
+      },
+      "expected_file_revision": "0000000000000000000000000000000000000000000000000000000000000000",
+      "action": {
+        "name": "apply_operations",
+        "operations": [
+          {
+            "op": "create_layer",
+            "name": "Paint",
+            "ref": "paint"
+          }
+        ]
+      }
     }
   ],
   "results": [
@@ -161,6 +180,33 @@
       "error": {
         "code": "REVISION_CONFLICT",
         "message": "Expected revision 8, current revision 9"
+      }
+    },
+    {
+      "protocol_version": 1,
+      "request_id": "fault-example",
+      "ok": false,
+      "error": {
+        "code": "RESULT_UNKNOWN",
+        "message": "Editor disconnected during request; refresh before deciding what to do next"
+      }
+    },
+    {
+      "protocol_version": 1,
+      "request_id": "fault-example",
+      "ok": false,
+      "error": {
+        "code": "TIMEOUT",
+        "message": "Queue deadline exceeded; request was not sent"
+      }
+    },
+    {
+      "protocol_version": 1,
+      "request_id": "fault-example",
+      "ok": false,
+      "error": {
+        "code": "REQUEST_CONFLICT",
+        "message": "Request ID reused with different payload"
       }
     }
   ]

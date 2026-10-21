@@ -51,10 +51,17 @@ class AsepriteCommand:
         """
         try:
             cmd = [os.getenv('ASEPRITE_PATH', 'aseprite')] + args
-            result = subprocess.run(cmd, check=True, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=timeout)
-            return True, result.stdout
+            # Decode on the calling thread. Windows communicate() uses reader
+            # threads; text decoding there can fail silently and lose evidence.
+            result = subprocess.run(cmd, check=True, capture_output=True, timeout=timeout)
+            return True, result.stdout.decode("utf-8")
         except subprocess.CalledProcessError as e:
-            return False, e.stderr
+            evidence = e.stderr or e.stdout or b""
+            if isinstance(evidence, bytes):
+                evidence = evidence.decode("utf-8", errors="backslashreplace")
+            return False, f"Aseprite exited {e.returncode}: {evidence}"
+        except UnicodeDecodeError as e:
+            return False, f"Aseprite output is not valid UTF-8: {e}"
         except (OSError, subprocess.TimeoutExpired) as e:
             return False, str(e)
     

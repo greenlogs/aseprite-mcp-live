@@ -4,6 +4,8 @@ from __future__ import annotations
 import asyncio
 from collections import OrderedDict
 import hashlib
+import os
+import logging
 import time
 from typing import Protocol
 
@@ -11,6 +13,8 @@ from .protocol import (
     BackendError, ErrorCode, Handshake, Limits, LiveTarget, Request, Result, failure,
     negotiate, parse_request,
 )
+
+log = logging.getLogger(__name__)
 
 
 class Backend(Protocol):
@@ -27,7 +31,8 @@ class Executor:
         self.session_id: str | None = None
         self.live_capabilities: frozenset[str] = frozenset()
         self._cache = OrderedDict()
-        self._lock = asyncio.Lock()
+        self._locks = {}
+        self._inflight = {}
 
     def attach_live(self, backend: Backend, hello: Handshake, token: str):
         capabilities = negotiate(hello, token)
@@ -57,23 +62,52 @@ class Executor:
             capabilities = self.live_capabilities if isinstance(request.target, LiveTarget) else backend.capabilities
             if request.action.name not in capabilities:
                 raise BackendError(ErrorCode.UNSUPPORTED_CAPABILITY, request.action.name)
-            # A single serialized queue bounds concurrent mutations and duplicate requests.
-            async with self._lock:
+            key = (request.target.backend, request.target.session_id if isinstance(request.target, LiveTarget) else None,
+                   request.request_id)
+            digest = hashlib.sha256(request.model_dump_json().encode()).digest()
+            now = time.monotonic()
+            for old in list(self._cache):
+                if now - self._cache[old][0] >= self.limits.dedup_ttl_seconds:
+                    del self._cache[old]
+            if key in self._cache:
+                _, old_digest, result = self._cache[key]
+                if digest != old_digest:
+                    raise BackendError(ErrorCode.REQUEST_CONFLICT, "Request ID reused with different payload")
+                return result
+            if key in self._inflight:
+                old_digest, task = self._inflight[key]
+                if digest != old_digest:
+                    raise BackendError(ErrorCode.REQUEST_CONFLICT, "Request ID reused while executing")
+            else:
+                if len(self._inflight) >= self.limits.dedup_entries:
+                    raise BackendError(ErrorCode.LIMIT_EXCEEDED, "Request queue full; refresh before retrying")
+                task = asyncio.create_task(self._execute(request, backend, key, digest))
+                self._inflight[key] = (digest, task)
+            # MCP cancellation cancels the waiter, never an accepted write or its receipt.
+            return await asyncio.shield(task)
+        except BackendError as exc:
+            return failure(request, exc)
+
+    async def _execute(self, request, backend, key, digest):
+        queued = time.perf_counter()
+        started = queued
+        resource = ("live", request.target.session_id) if isinstance(request.target, LiveTarget) else (
+            "cli", os.path.normcase(os.path.realpath(request.target.path)))
+        lock, users = self._locks.get(resource, (asyncio.Lock(), 0))
+        self._locks[resource] = (lock, users + 1)
+        acquired = False
+        try:
+            try:
+                await asyncio.wait_for(lock.acquire(), self.limits.timeout_seconds)
+                acquired = True
+                started = time.perf_counter()
+            except TimeoutError as exc:
+                raise BackendError(ErrorCode.TIMEOUT, "Queue deadline exceeded; request was not sent") from exc
+            if acquired:
                 if isinstance(request.target, LiveTarget) and (
                     self.live is not backend or request.target.session_id != self.session_id
                 ):
                     raise BackendError(ErrorCode.SESSION_MISMATCH, "Session changed while queued")
-                key = (request.target.backend, self.session_id, request.request_id)
-                digest = hashlib.sha256(request.model_dump_json().encode()).digest()
-                now = time.monotonic()
-                for old in list(self._cache):
-                    if now - self._cache[old][0] >= self.limits.dedup_ttl_seconds:
-                        del self._cache[old]
-                if key in self._cache:
-                    _, old_digest, result = self._cache[key]
-                    if digest != old_digest:
-                        raise BackendError(ErrorCode.REQUEST_CONFLICT, "Request ID reused with different payload")
-                    return result
                 try:
                     if isinstance(request.target, LiveTarget):
                         try:
@@ -90,11 +124,25 @@ class Executor:
                 except BackendError as exc:
                     result = failure(request, exc)
                 except Exception:
+                    log.exception("Backend failed without a receipt")
                     code = ErrorCode.RESULT_UNKNOWN if isinstance(request.target, LiveTarget) else ErrorCode.EXECUTION_FAILED
                     result = failure(request, BackendError(code, "Backend failed without a receipt"))
-                self._cache[key] = (time.monotonic(), digest, result)
-                while len(self._cache) > self.limits.dedup_entries:
-                    self._cache.popitem(last=False)
-                return result
         except BackendError as exc:
-            return failure(request, exc)
+            result = failure(request, exc)
+        finally:
+            log.info("execution backend=%s queue_ms=%.2f run_ms=%.2f", request.target.backend,
+                     (started - queued) * 1000, (time.perf_counter() - started) * 1000)
+            if acquired:
+                lock.release()
+            _, users = self._locks[resource]
+            if users == 1:
+                del self._locks[resource]
+            else:
+                self._locks[resource] = (lock, users - 1)
+            self._inflight.pop(key, None)
+        # An old connection completing must not populate the new session's cache.
+        if not isinstance(request.target, LiveTarget) or self.live is backend:
+            self._cache[key] = (time.monotonic(), digest, result)
+            while len(self._cache) > self.limits.dedup_entries:
+                self._cache.popitem(last=False)
+        return result
