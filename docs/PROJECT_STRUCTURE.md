@@ -1,6 +1,6 @@
 # 动态项目结构
 
-最近复核：2026-10-21，P1-M1 扩展连接验收。结构说明唯一来源；实际与规划分开。
+最近复核：2026-10-21，P1-M2 文档及事务验收。结构说明唯一来源；实际与规划分开。
 
 ## 实际结构
 
@@ -31,12 +31,14 @@ aseprite-mcp/
 │  │  ├─ live.py             回环 WebSocket、发现文件与在线请求关联
 │  │  └─ cli.lua             固定磁盘读取及批量普通 RGB 图层编辑脚本
 │  └─ tools/                 20 个上游 CLI 工具模块及 __init__.py，原名/参数保留
-├─ extension/                package.json 注册 main.lua；bridge.lua 管理在线会话与去重
+├─ extension/                package.json/main.lua 生命周期；bridge.lua 会话去重；editor.lua 文档注册/事务/历史
 ├─ tests/
 │  ├─ conftest.py            平台临时目录和每模块画布夹具
 │  ├─ test_environment.py    上游工具枚举、中文路径与真实像素核对
 │  ├─ test_protocol.py       协议、错误映射、模拟 live、去重与样例
 │  ├─ test_cli_backend.py    真实 CLI 纵向路径与进程/产物故障模拟
+│  ├─ live_support.py        独立 UI 进程与仅测试使用的手工动作控制夹具
+│  ├─ test_live_editor.py    真实文档、Cel、事务回滚、历史与保存
 │  ├─ test_live_bridge.py    真实 socket 模拟编辑器及真实 UI 扩展生命周期
 │  ├─ test_server.py         工具配置、真实 stdio 及 MCP→真实 CLI 读取
 │  └─ test_*.py              121 个上游基线测试（20 个测试文件）
@@ -64,10 +66,10 @@ aseprite-mcp/
    │  │                      可由契约测试校验的握手/请求/结果样例
    │  ├─ MODULE_REPORT_TEMPLATE.md
    │  └─ prompts/            P0、P1、P2、P3 模块提示词
-   └─ progress/              P0～P3 阶段总结、P0-M1 / P0-M2 / P1-M1 交接报告
+   └─ progress/              P0～P3 阶段总结、P0-M1 / P0-M2 / P1-M1 / P1-M2 交接报告
 ```
 
-依赖方向：`__main__` → `server` → Request / Executor → CliBackend → commands / 固定 Lua → Aseprite CLI。旧兼容工具 → 共享算法/commands，尚未全部迁移到 Executor。live Backend 已实现同一 Backend 协议，通过 WebSocket 接入扩展；当前仅协商无副作用列表能力。协议层不导入工具或后端。
+依赖方向：`__main__` → `server` → Request / Executor → CliBackend → commands / 固定 Lua → Aseprite CLI。旧兼容工具 → 共享算法/commands，尚未全部迁移到 Executor。live Backend 已实现同一 Backend 协议，通过 WebSocket 接入扩展；当前协商七种文档/事务动作。协议层不导入工具或后端。
 
 ## 当前入口
 
@@ -80,11 +82,11 @@ aseprite-mcp/
 | 公共 CLI 路径 | Python Executor.execute(JSON) 或 CLI 配置的 MCP cli_execute |
 | 构建 | `uv build --out-dir .work/build`；hatchling；包资源已检查，P2 发布/干净安装验收未执行 |
 | 扩展加载 | extension/package.json → main.lua init/exit；设置对话框选择服务发现 JSON；core/all lifespan 监听 |
-| 下一模块 | [P1-M2](development/prompts/P1-实时核心闭环.md#p1-m2) |
+| 下一模块 | [P1-M3](development/prompts/P1-实时核心闭环.md#p1-m3) |
 
 ## 规划结构：尚未实现
 
-P1-M2/M3 将扩充现有扩展的文档、事务和预览模块。`scripts/` 扩展打包、`.github/workflows/` 自动检查及正式发布入口在 P2。高级能力按 P3 清单迁移；尚未存在的目录不是可运行入口。
+P1-M3 将扩充现有扩展的 PNG 预览模块。`scripts/` 扩展打包、`.github/workflows/` 自动检查及正式发布入口在 P2。高级能力按 P3 清单迁移；尚未存在的目录不是可运行入口。
 
 ## 复核记录与更新规则
 
@@ -94,3 +96,5 @@ P0-M1 导入上游源码、测试和环境入口；P0-M2 增加协议/配置/执
 
 
 2026-10-21 P1-M1：新增 live.py、extension/ 与 test_live_bridge.py；FastMCP lifespan 实际监听回环端口，websockets 15.0.1；真实 UI 扩展生命周期通过。
+
+2026-10-21 P1-M2：新增 editor.lua、live_support.py 和 test_live_editor.py；实时文档注册、事件修订、事务/历史/原生保存已真实验证。

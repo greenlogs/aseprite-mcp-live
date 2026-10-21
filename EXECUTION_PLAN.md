@@ -6,7 +6,7 @@
 
 模块结束：按[交接模板](docs/development/MODULE_REPORT_TEMPLATE.md)生成 `docs/progress/<模块编号>.md`，同步阶段总结与本文件；涉及结构变化时同步[项目结构](docs/PROJECT_STRUCTURE.md)。已验收开发模块默认本地提交，不推送。阶段结束另做集成验收。
 
-当前任务：[P1-M2 · 文档及事务编辑](docs/development/prompts/P1-实时核心闭环.md#p1-m2)。前置：P1-M1 已验收。
+当前任务：[P1-M3 · 图片预览与集成](docs/development/prompts/P1-实时核心闭环.md#p1-m3)。前置：P1-M2 已验收。
 
 ## P0 · 项目基础
 
@@ -17,10 +17,10 @@
 
 ## P1 · 实时核心闭环
 
-提示词：[P1](docs/development/prompts/P1-实时核心闭环.md)。总结：真实扩展连接与请求往返已验收，38 项专项通过，下一模块 P1-M2；[完整总结](docs/progress/P1.md)。
+提示词：[P1](docs/development/prompts/P1-实时核心闭环.md)。总结：实时连接、文档与事务编辑已验收，39 项专项通过，下一模块 P1-M3；[完整总结](docs/progress/P1.md)。
 
 - [x] [P1-M1 · 扩展连接](docs/development/prompts/P1-实时核心闭环.md#p1-m1)
-- [ ] [P1-M2 · 文档及事务编辑](docs/development/prompts/P1-实时核心闭环.md#p1-m2)
+- [x] [P1-M2 · 文档及事务编辑](docs/development/prompts/P1-实时核心闭环.md#p1-m2)
 - [ ] [P1-M3 · 图片预览与集成](docs/development/prompts/P1-实时核心闭环.md#p1-m3)
 
 ## P2 · 稳定性与首版发布

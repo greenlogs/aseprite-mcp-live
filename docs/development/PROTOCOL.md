@@ -6,7 +6,7 @@
 
 P0 已实现类型、认证/协商函数、执行接口、单会话路由、去重、CLI 纵向路径和 stdio MCP。`Backend` 提供 `capabilities: frozenset[str]` 与 `async execute(Request) -> Result`。公共入口为 `Executor.execute(JSON str/bytes) -> Result`，业务参数经严格 JSON 校验；未知字段、错误类型均拒绝。
 
-P0 **没有 WebSocket listener、Lua 扩展或真实实时编辑后端**。P1 在 `create_server` 生命周期把实际连接的 Backend 绑定同一个 Executor；禁止另起无法被工具访问的 Executor。实时工具目前注册但返回 `NOT_CONNECTED`，状态工具返回 `connected: false`。P0 对实时修订、断连及超时仅模拟错误契约，真实实现和验证在 P1。
+P0 当时没有 WebSocket listener、Lua 扩展或真实实时编辑后端；P1-M1/M2 已真实实现连接及文档/事务。P1 在 `create_server` 生命周期把实际连接的 Backend 绑定同一个 Executor；禁止另起无法被工具访问的 Executor。实时工具目前注册但返回 `NOT_CONNECTED`，状态工具返回 `connected: false`。P0 对实时修订、断连及超时仅模拟错误契约，真实实现和验证在 P1。
 
 ## 传输、握手与对象
 
@@ -91,3 +91,7 @@ P1-M3 将解码 PNG 包装为 MCP ImageContent，文字元数据与图片一起�
 | dedup_ttl_seconds | 120 | 提供短期确认重试窗口 |
 
 Executor 串行执行，缓存相同 ID/相同请求的最终结果（包括已确认失败和结果未知），同 ID 不同内容拒绝。在 TTL 内且未被容量淘汰时返回缓存，不重复操作；断开清缓存，新会话不复用旧 id。TTL/淘汰后的请求没有去重保证，因此 RESULT_UNKNOWN 后必须先刷新文档状态，不盲目重发。核心变更 MCP 工具可显式传 request_id；省略时服务器生成 UUID。WebSocket 传输重试必须保留同一 id，不能重新生成。P1 扩展也需有对应去重与最终结果确认，Python 缓存不能替代真实编辑端防重。
+
+## P1-M2 结果细化
+
+实时 info/list 字段已实现；selection 为 bounds 与 empty，active_frame 从 1 起。revision 是内容事件计数，回滚也可能推进，不能当作批次数；context_revision 独立。apply 无新图层时可省略 layer_refs；undo/redo applied=false 表示没有收到历史变更事件。save 仅原生 .aseprite/.ase 绝对路径，存在目标无论是否原路径都需 overwrite=true；不能用保存工具隐式导出图片。

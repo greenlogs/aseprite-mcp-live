@@ -53,3 +53,7 @@ P0 另执行 `uv build --out-dir .work/build`，检查 wheel 中的 `backends/cl
 `uv run --locked pytest -q tests/test_live_bridge.py tests/test_protocol.py tests/test_server.py --basetemp=.work/pytest-live`。其中 socket 用例模拟编辑器，real_extension_lifecycle 使用真实非 batch UI 进程与隔离 ASEPRITE_USER_FOLDER，安装 package.json 并验证 init/exit、连接/重连。测试仅对隔离目录夹具脚本预设读/写/socket 权限，不修改个人配置；Windows 隐藏启动测试窗口。
 
 开发扩展安装：将 extension 文件夹复制到 Aseprite 用户配置目录的 extensions/aseprite-mcp-live，重启后使用 File > Scripts > MCP: Connect / Settings。从 MCP get_connection_status 或服务 stderr 获取 connection_file 路径，在对话框选择此 JSON 并连接；首次按 Aseprite 权限对话框允许读取配置和回环连接。正式打包/安装验收在 P2。配置文件含临时凭据，不入库、不分享；服务退出后清理。
+
+## P1-M2 文档专项
+
+`uv run --locked pytest -q tests/test_live_editor.py tests/test_live_bridge.py tests/test_protocol.py tests/test_server.py --basetemp=.work/pytest-editor`。test_live_editor 使用真实 UI、app.useTool 手工动作及真实 transaction 失败注入；live_support 中的本地测试控制文件仅用于夹具，不是产品协议或任意 Lua 工具。验证未保存文档、重名层、偏移/空 Cel、整批历史、修订冲突、去重和中文原生保存。

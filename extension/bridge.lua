@@ -5,6 +5,9 @@ local M = {}
 local function plain(value)
   if type(value)~="userdata" and type(value)~="table" then return value end
   local result={}
+  -- API 28 JSON arrays expose ipairs but pairs yields no entries.
+  for index,item in ipairs(value) do result[index]=plain(item) end
+  if next(result) then return result end
   for key,item in pairs(value) do result[key]=plain(item) end
   return result
 end
@@ -37,10 +40,15 @@ function M.new(plugin)
       if kind==WebSocketMessageType.OPEN then
         -- Every reconnect gets a fresh namespace; no cached old-session writes.
         self.cache={}; self.order={}; self.ready=false
+        if self.editor then self.editor:close(); self.editor=nil end
+        local capabilities={"list_documents"}
+        if Sprite and Image and app.events and app.transaction and app.undo and app.redo then
+          capabilities={"list_documents","get_document_info","create_sprite","apply_operations","save_sprite","undo","redo"}
+        end
         self.session=tostring(os.time()).."-"..tostring(math.random(1,2147483647)).."-"..tostring(generation)
         self.ws:sendText(json.encode{type="hello", protocol_version=1, token=config.token,
           session_id=self.session, aseprite_version=tostring(app.version), api_version=app.apiVersion,
-          capabilities={"list_documents"}})
+          capabilities=capabilities})
         self:set_status("Handshaking")
       elseif kind==WebSocketMessageType.TEXT then
         local ok, message=pcall(json.decode, data)
@@ -51,7 +59,9 @@ function M.new(plugin)
           if message.protocol_version~=1 or message.session_id~=self.session then
             self:disconnect(); self:set_status("Invalid welcome"); return
           end
-          self.limits=message.limits; self.ready=true; self:set_status("Connected")
+          self.limits=message.limits
+          self.editor=dofile(app.fs.joinPath(plugin.path,"editor.lua")).new(self.limits)
+          self.ready=true; self:set_status("Connected")
           return
         end
         if not message.request_id then
@@ -68,13 +78,14 @@ function M.new(plugin)
           if previous and os.time()-previous.time<self.limits.dedup_ttl_seconds then
             if previous.raw==data then self.ws:sendText(previous.result); return end
             reject("REQUEST_CONFLICT", "Request ID reused with different payload")
-          elseif request.action and request.action.name=="list_documents" then
-            local documents={}
-            for _, sprite in ipairs(app.sprites) do
-              documents[#documents+1]={width=sprite.width,height=sprite.height,filename=sprite.filename}
-            end
-            result.ok=true; result.data={documents=documents}
-          else reject("UNSUPPORTED_CAPABILITY", "Unknown editor action") end
+          elseif request.action then
+            local ok,value,record=pcall(function() return self.editor:execute(request) end)
+            if ok then
+              result.ok=true; result.data=value; result.revision=record and record.revision
+              result.context_revision=self.editor.context
+            elseif type(value)=="table" then reject(value.code,value.message)
+            else reject("EXECUTION_FAILED",tostring(value)) end
+          else reject("INVALID_REQUEST", "Missing editor action") end
         end
         local encoded=json.encode(result)
         if not self.cache[request.request_id] then self.order[#self.order+1]=request.request_id end
@@ -85,6 +96,7 @@ function M.new(plugin)
         while #self.order>self.limits.dedup_entries do self.cache[table.remove(self.order,1)]=nil end
         self.ws:sendText(encoded)
       elseif kind==WebSocketMessageType.CLOSE then
+        if self.editor then self.editor:close(); self.editor=nil end
         self.ready=false; self:set_status("Disconnected / reconnecting")
       elseif kind==WebSocketMessageType.ERROR then
         self.ready=false; self:set_status("Connection failed; check server and configuration")
