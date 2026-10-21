@@ -10,7 +10,7 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
 PROTOCOL_VERSION = 1
-SERVICE_VERSION = "0.1.0"
+SERVICE_VERSION = "0.2.0"
 CORE_CAPABILITIES = frozenset({
     "list_documents", "get_document_info", "create_sprite", "apply_operations",
     "get_preview", "save_sprite", "undo", "redo",

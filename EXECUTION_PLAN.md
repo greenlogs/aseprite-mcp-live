@@ -6,7 +6,7 @@
 
 模块结束：按[交接模板](docs/development/MODULE_REPORT_TEMPLATE.md)生成 `docs/progress/<模块编号>.md`，同步阶段总结与本文件；涉及结构变化时同步[项目结构](docs/PROJECT_STRUCTURE.md)。已验收开发模块默认本地提交，不推送。阶段结束另做集成验收。
 
-当前任务：P2 全部模块与阶段集成已验收；下一入口 [P3-M1 · 上游工具兼容清单](docs/development/prompts/P3-高级能力迁移.md#p3-m1)，尚未开始。
+当前任务：P2（含用户追加 P2-M3）全部已验收；下一入口 [P3-M1 · 上游工具兼容清单](docs/development/prompts/P3-高级能力迁移.md#p3-m1)，尚未开始。
 
 ## P0 · 项目基础
 
@@ -25,10 +25,11 @@
 
 ## P2 · 稳定性与首版发布
 
-提示词：[P2](docs/development/prompts/P2-稳定性与首版发布.md)。总结：可靠性、服务/扩展打包、Windows 隔离安装及真实客户端集成已验收，191 项全量回归通过；[完整总结](docs/progress/P2.md)。
+提示词：[P2](docs/development/prompts/P2-稳定性与首版发布.md)。总结：可靠性、自动连接、固定端口及 Windows 隔离安装/真实客户端集成已验收，197 项全量回归通过；[完整总结](docs/progress/P2.md)。
 
 - [x] [P2-M1 · 错误与状态管理](docs/development/prompts/P2-稳定性与首版发布.md#p2-m1)
 - [x] [P2-M2 · 安装打包及发布验收](docs/development/prompts/P2-稳定性与首版发布.md#p2-m2)
+- [x] [P2-M3 · 自动连接与固定端口](docs/development/prompts/P2-稳定性与首版发布.md#p2-m3)
 
 ## P3 · 高级能力迁移
 
@@ -37,4 +38,4 @@
 - [ ] [P3-M1 · 上游工具兼容清单](docs/development/prompts/P3-高级能力迁移.md#p3-m1)
 - [ ] [P3-M2 · 按能力组迁移与回归](docs/development/prompts/P3-高级能力迁移.md#p3-m2)
 
-首发交付点：P2。后续演进：P3 按复核后的能力清单分批迁移。P0/P1/P2 已验收，0.1.0 首版候选已验收但尚未发布；P0 基线已按用户授权初始化并入库，P1/P2 按模块本地提交；未进行软件分发或 GitHub 推送；首版不要求全部上游工具实时可用，也不承诺未验收平台。
+首发交付点：P2。后续演进：P3 按复核后的能力清单分批迁移。P0/P1/P2 已验收，0.2.0 自动连接候选已验收但尚未发布；P0 基线已按用户授权初始化并入库，P1/P2 按模块本地提交；未进行软件分发或 GitHub 推送；首版不要求全部上游工具实时可用，也不承诺未验收平台。

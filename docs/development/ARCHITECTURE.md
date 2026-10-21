@@ -113,3 +113,11 @@ CLI 公共 Request 新增可选 expected_file_revision，data.file_revision 为 
 hatch wheel 只包含服务包/资源，sdist 使用显式白名单。scripts/build_release.py 从同一工作区建立服务包、根部 manifest 的扩展 ZIP、锁定生产依赖与摘要；scripts/verify_install.py 不导入开发源码，从独立 site-packages 和新扩展配置执行真实 MCP 验收。默认用户入口为安装环境 aseprite-mcp 可执行脚本；独立 python -I -m 入口同样可用。
 
 服务/扩展 0.1.0、协议 v1；扩展上报可选 extension_version 并校验已提供的版本。ContractServer 封装 SDK 1.6.0 错误包装兼容点，保留 JSON Result 与 MCP isError 的一致性。CI 只覆盖无 Aseprite 契约、文档与分发检查，真实 Windows GUI 验收单独记录，不包含远程发布动作。
+
+## P2-M3 自动连接决策（替代旧默认发现流程）
+
+0.2.0 保留 Python listener / Aseprite WebSocket 客户端方向，默认固定 127.0.0.1:8765；--host/--port 优先于环境和默认。Aseprite 官方 API 是客户端，不能照搬 Blender Python 插件的 socket 监听方向；采用相同的“固定端点、自动启动/连接”用户体验。
+
+服务先绑定端口，再向用户运行目录按 host/port 原子发布本次随机凭据。默认路径可在成功独占端点后替换强杀残留；显式 CONNECTION_FILE 仍独占创建。扩展启用后延迟 1 秒自动读取此文件，服务重启时检测凭据变化并建立新会话；认证和旧请求隔离保留。Timer 在手动停止/卸载时释放，Disconnect 持久停用自动连接。高级 Legacy JSON 保留旧方式，不再是正常路径。公开文档中的旧随机文件/手选流程由本节替代。
+
+运行目录：ASEPRITE_MCP_RUNTIME_DIR（绝对路径）或第一个非空 LOCALAPPDATA/XDG_RUNTIME_DIR/TMPDIR/TEMP 加 aseprite-mcp，无环境时 /tmp/aseprite-mcp；Python/Lua 使用一致规则。每端点 connection-<host冒号替换为下划线>-<port>.json。多进程需显式不同端口；没有自动端口扫描、目标漂移或 CLI 降级。仅 Windows 基线声明真实验收。

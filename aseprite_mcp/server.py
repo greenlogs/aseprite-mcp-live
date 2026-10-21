@@ -43,12 +43,12 @@ class ContractServer(FastMCP):
                 str(exc))).model_dump_json()) from exc
 
 
-def create_server(profile: str | None = None) -> FastMCP:
+def create_server(profile: str | None = None, *, config: RuntimeConfig | None = None) -> FastMCP:
     # Importing commands also loads the local .env, without overriding environment.
     profile = profile or os.getenv("ASEPRITE_MCP_TOOL_PROFILE", "core")
     if profile not in {"core", "cli", "all"}:
         raise ValueError("ASEPRITE_MCP_TOOL_PROFILE must be core, cli or all")
-    config = RuntimeConfig.from_env()
+    config = config or RuntimeConfig.from_env()
     executor = Executor(CliBackend(config.limits), config.limits)
     bridge = LiveBridge(executor, config)
 

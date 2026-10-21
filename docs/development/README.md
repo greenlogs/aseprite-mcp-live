@@ -53,3 +53,5 @@ P2 是首发交付点。发布验收通过只表示产物可发布；不自动�
 已建立：[正式测试说明](../TESTING.md)、[贡献入口](../../CONTRIBUTING.md)、[第三方来源](../THIRD_PARTY.md)。
 
 P2 已建立：[Windows 安装](../INSTALL.md)、[故障排查](../TROUBLESHOOTING.md)、[候选构建与发布边界](../RELEASING.md)。真实隔离安装和 Windows CI 契约命令分别见 TESTING；CI 不替代 GUI 验收。
+
+用户追加 P2-M3 已将0.2.0默认连接改为固定127.0.0.1:8765与扩展自动发现，支持 --host/--port；当前连接规则以 INSTALL 和 PROTOCOL 的 P2-M3 补充为准，历史交接中的手选JSON步骤只适用于旧方式。

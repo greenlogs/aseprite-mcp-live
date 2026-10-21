@@ -25,6 +25,12 @@ def run(coro):
     return asyncio.run(coro)
 
 
+@pytest.fixture(autouse=True)
+def isolated_connection_directory(tmp_path, monkeypatch):
+    # Automatic discovery must never read/write the developer's real profile.
+    monkeypatch.setenv("ASEPRITE_MCP_RUNTIME_DIR", str(tmp_path / "runtime"))
+
+
 def ok(result):
     """Assert a tool call did not return an error message."""
     assert not str(result).startswith(

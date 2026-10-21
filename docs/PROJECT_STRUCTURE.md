@@ -1,6 +1,6 @@
 # 动态项目结构
 
-最近复核：2026-10-21，P2-M2 安装打包及阶段集成验收。结构说明唯一来源；实际与规划分开。
+最近复核：2026-10-21，P2-M3 自动连接与固定端口。结构说明唯一来源；实际与规划分开。
 
 ## 实际结构
 
@@ -18,12 +18,12 @@ aseprite-mcp/
 │  └─ verify_install.py     独立 Windows 安装验收脚本，真实 MCP SDK/UI 与图片证据
 ├─ aseprite_mcp/
 │  ├─ __init__.py            上游装饰器注册实例（116 项兼容基线）
-│  ├─ __main__.py            stdio 服务命令入口
+│  ├─ __main__.py            stdio 入口、--host/--port 参数与配置优先级
 │  ├─ server.py              core/cli/all、listener 生命周期与 MCP 文本/图片内容转换
 │  ├─ core/
 │  │  ├─ commands.py         上游进程/脚本执行；UTF-8、超时及错误
 │  │  ├─ protocol.py         v1 请求、批次、目标、结果、PNG、握手与上限类型
-│  │  ├─ config.py           回环端点配置、随机启动 token 和环境上限
+│  │  ├─ config.py           回环/默认固定端口、运行目录发现路径、随机 token 和环境上限
 │  │  ├─ execution.py        Backend 接口、按资源队列、取消后确认、会话及去重
 │  │  ├─ files.py            CLI/旧工具共享的有限期线程磁盘锁
 │  │  ├─ legacy.py           旧 MCP CLI 工具的 worker 包装及失败映射
@@ -35,19 +35,20 @@ aseprite-mcp/
 │  ├─ backends/
 │  │  ├─ __init__.py         后端包
 │  │  ├─ cli.py              受控线程、JSON 参数、nonce 回执、文件提交与清理
-│  │  ├─ live.py             回环 WebSocket、发现文件与在线请求关联
+│  │  ├─ live.py             回环 WebSocket、按端口原子发布凭据与在线请求关联
 │  │  └─ cli.lua             固定磁盘读取及批量普通 RGB 图层编辑脚本
 │  └─ tools/                 20 个上游 CLI 工具模块及 __init__.py，原名/参数保留
 ├─ extension/
-│  ├─ package.json           注册 main.lua 的 0.1.0 发布扩展清单
+│  ├─ package.json           注册 main.lua 的 0.2.0 发布扩展清单
 │  ├─ NOTICE.md              扩展包上游固定提交与许可归属
-│  ├─ main.lua               init/exit、连接/断开菜单与重载清理
-│  ├─ bridge.lua             设置、主动 WebSocket 握手/会话与编辑端去重
+│  ├─ main.lua               init/exit、延迟自动连接、菜单与重载清理
+│  ├─ bridge.lua             地址/端口设置、自动发现/重连/停止、握手与编辑端去重
 │  ├─ editor.lua             文档/图层注册、事件修订、事务/历史与保存
 │  └─ preview.lua            独立 Image 合成与内存 PNG/base64 编码
 ├─ tests/
 │  ├─ conftest.py            平台临时目录和每模块画布夹具
 │  ├─ test_environment.py    上游工具枚举、中文路径与真实像素核对
+│  ├─ test_auto_connection.py 默认/CLI 配置、发现原子性及真实 UI/服务重启自动连接
 │  ├─ test_reliability.py   取消/断线/迟到回执/磁盘修订及真实 UI 故障恢复
 │  ├─ test_protocol.py       协议、错误映射、模拟 live、去重与样例
 │  ├─ test_cli_backend.py    真实 CLI 纵向路径与进程/产物故障模拟
@@ -93,13 +94,13 @@ aseprite-mcp/
 
 | 入口 | 实际位置或状态 |
 |---|---|
-| 启动 | `uv run --locked python -m aseprite_mcp`；或 `uv run --locked aseprite-mcp`，stdio |
+| 启动 | `uv run --locked python -m aseprite_mcp`；或 `uv run --locked aseprite-mcp [--host 127.0.0.1] [--port 8765]`，stdio |
 | 工具配置 | `ASEPRITE_MCP_TOOL_PROFILE=core`（默认 9）/cli（116）/all（125）；原始 Lua 额外显式开启 |
 | 依赖同步 | `uv sync --locked --python 3.13` |
 | 测试 | `uv run --locked pytest -q --basetemp=.work/pytest`；详见 [TESTING](TESTING.md) |
 | 公共 CLI 路径 | Python Executor.execute(JSON) 或 CLI 配置的 MCP cli_execute |
 | 构建 | `uv run --locked python scripts/build_release.py --out-dir dist`；wheel/sdist/扩展/锁定依赖/摘要 |
-| 扩展加载 | `.aseprite-extension` 安装或解压至配置 extensions/aseprite-mcp-live；main.lua init/exit；设置选择发现 JSON |
+| 扩展加载 | `.aseprite-extension` 安装或解压至配置 extensions/aseprite-mcp-live；main.lua init/exit；默认自动发现 127.0.0.1:8765，设置可改端口 |
 | 下一模块 | [P3-M1](development/prompts/P3-高级能力迁移.md#p3-m1)，尚未开始 |
 
 ## 规划结构：尚未实现
@@ -124,3 +125,7 @@ P0-M1 导入上游源码、测试和环境入口；P0-M2 增加协议/配置/执
 2026-10-21 P2-M2：新增 scripts 三个构建/文档/安装验收入口、Windows CI 配置、扩展 NOTICE 及安装/故障/发布文档；hatch 白名单限定服务与源码分发，扩展包含根部清单和四个 Lua；服务/扩展版本进入状态与兼容校验。
 
 P2 阶段复核：191 项完整 Windows 回归，独立 site-packages/扩展 ZIP/MCP SDK 双启动入口及图片显示通过；0.1.0 候选已验收未发布，其他平台未验证。
+
+2026-10-21 P2-M3：固定默认端口 8765，命令行优先配置；运行凭据按 host/port 原子发布，扩展 Timer 自动读取/重连，停止和退出清理。服务/扩展版本 0.2.0，新增自动连接专项，独立安装验收改用产品启动逻辑。
+
+P2-M3 验收复核：197项全量、61项无软件检查、真实强杀重启自动恢复和0.2.0独立安装/图片显示通过。候选 .work/release-auto，证据 .work/auto-evidence，未推送或发布。

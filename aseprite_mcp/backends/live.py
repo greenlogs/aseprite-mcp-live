@@ -17,6 +17,7 @@ from websockets.exceptions import ConnectionClosed
 from ..core.protocol import (
     BackendError, CORE_CAPABILITIES, ErrorCode, Handshake, Request, Result, SERVICE_VERSION, Welcome, failure,
 )
+from ..core.config import discovery_file
 
 log = logging.getLogger(__name__)
 
@@ -51,13 +52,16 @@ class LiveBridge:
         self.server = None
         self.hello: Handshake | None = None
         self.url: str | None = None
-        self.connection_file = Path(os.getenv("ASEPRITE_MCP_CONNECTION_FILE") or
-                                    Path(tempfile.gettempdir()) / f"aseprite-mcp-{os.getpid()}-{uuid4().hex}.json")
+        explicit_file = os.getenv("ASEPRITE_MCP_CONNECTION_FILE")
+        self.automatic_discovery = not explicit_file and config.port != 0
+        self.connection_file = (Path(explicit_file) if explicit_file else discovery_file(config.host, config.port)
+            if config.port else Path(tempfile.gettempdir()) / f"aseprite-mcp-{os.getpid()}-{uuid4().hex}.json")
 
     def status(self):
         hello = self.hello
         return {"connected": self.executor.live is not None, "session_id": self.executor.session_id,
                 "service_version": SERVICE_VERSION, "extension_version": hello.extension_version if hello else None,
+                "automatic_discovery": self.automatic_discovery,
                 "protocol_version": 1, "capabilities": sorted(self.executor.live_capabilities),
                 "aseprite_version": hello.aseprite_version if hello else None,
                 "api_version": hello.api_version if hello else None,
@@ -66,20 +70,37 @@ class LiveBridge:
     @asynccontextmanager
     async def lifespan(self):
         # Bind before advertising. A port collision fails startup, never CLI fallback.
-        async with serve(self._handle, self.config.host, self.config.port,
+        try:
+            listener = await serve(self._handle, self.config.host, self.config.port,
                          max_size=self.config.limits.max_message_bytes, compression=None,
-                         logger=log) as server:
+                         logger=log)
+        except OSError as exc:
+            raise OSError(f"Cannot listen on {self.config.host}:{self.config.port}; choose another --port and match it in the extension. {exc}") from exc
+        async with listener as server:
             self.server = server
             host = f"[{self.config.host}]" if ":" in self.config.host else self.config.host
             self.url = f"ws://{host}:{server.sockets[0].getsockname()[1]}"
             try:
-                # Exclusive creation prevents replacing another process's discovery file.
-                try:
-                    fd = os.open(self.connection_file, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
-                except FileExistsError as exc:
-                    raise RuntimeError("Connection file already exists; select a new path or confirm the old server has exited before removing it") from exc
-                with os.fdopen(fd, "w", encoding="utf-8") as stream:
-                    json.dump({"url": self.url, "token": self.config.token}, stream)
+                payload = {"url": self.url, "token": self.config.token}
+                if self.automatic_discovery:
+                    # We own this endpoint after binding. Atomically replace its
+                    # stale receipt, including after a force-killed previous run.
+                    self.connection_file.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+                    fd, staged = tempfile.mkstemp(prefix=".connection-", dir=self.connection_file.parent)
+                    try:
+                        with os.fdopen(fd, "w", encoding="utf-8") as stream:
+                            json.dump(payload, stream)
+                        os.replace(staged, self.connection_file)
+                    finally:
+                        Path(staged).unlink(missing_ok=True)
+                else:
+                    # Legacy explicit files retain exclusive creation semantics.
+                    try:
+                        fd = os.open(self.connection_file, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+                    except FileExistsError as exc:
+                        raise RuntimeError("Connection file already exists; select a new path or confirm the old server has exited before removing it") from exc
+                    with os.fdopen(fd, "w", encoding="utf-8") as stream:
+                        json.dump(payload, stream)
                 log.warning("Live connection file: %s", self.connection_file)
                 yield self
             finally:

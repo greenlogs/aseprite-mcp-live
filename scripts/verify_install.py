@@ -4,6 +4,7 @@ import asyncio
 import base64
 import gc
 from contextlib import asynccontextmanager
+from datetime import timedelta
 import hashlib
 import io
 import json
@@ -25,7 +26,7 @@ async def until(predicate, timeout=20):
 
 
 @asynccontextmanager
-async def installed_editor(directory, extension_archive, aseprite, connection):
+async def installed_editor(directory, extension_archive, aseprite, runtime_root):
     user = directory / "profile"
     extension = user / "extensions/aseprite-mcp-live"
     extension.mkdir(parents=True)
@@ -36,7 +37,7 @@ async def installed_editor(directory, extension_archive, aseprite, connection):
     control, response = directory / "control.json", directory / "response.json"
     boot.write_text('''
 local b=assert(__aseprite_mcp_live,"Installed extension did not initialize")
-local f=assert(io.open(app.params.connection,"rb"));local c=json.decode(f:read("*a"));f:close();b:connect(c)
+-- Product init starts automatic discovery. No test calls connect() or reads credentials.
 local last=0
 test_timer=Timer{interval=0.04,ontick=function()
   local f=io.open(app.params.control,"rb");if not f then return end
@@ -74,9 +75,10 @@ end};test_timer:start()
     startup.dwFlags |= subprocess.STARTF_USESHOWWINDOW
     startup.wShowWindow = 0
     with (directory / "aseprite.log").open("w") as log:
-        process = subprocess.Popen([str(aseprite), "--script-param", f"connection={connection}",
-            "--script-param", f"control={control}", "--script-param", f"response={response}",
-            "--script", str(boot)], env=dict(os.environ, ASEPRITE_USER_FOLDER=str(user)),
+        process = subprocess.Popen([str(aseprite), "--script-param", f"control={control}",
+            "--script-param", f"response={response}",
+            "--script", str(boot)], env=dict(os.environ, ASEPRITE_USER_FOLDER=str(user), ASEPRITE_MCP_RUNTIME_DIR=str(runtime_root),
+                ASEPRITE_MCP_CONNECTION_FILE="", ASEPRITE_MCP_HOST="127.0.0.1", ASEPRITE_MCP_PORT="8765"),
             cwd=directory, startupinfo=startup, stdout=log, stderr=log)
         try:
             yield manual
@@ -95,7 +97,10 @@ async def verify(python, extension, aseprite, directory):
     directory.mkdir(parents=True, exist_ok=False)
     env = {key: value for key, value in os.environ.items() if key not in {"PYTHONPATH", "PYTHONHOME"}}
     env.update(ASEPRITE_PATH=str(aseprite), ASEPRITE_MCP_TOOL_PROFILE="all",
-               ASEPRITE_MCP_ENABLE_RAW_LUA="0", ASEPRITE_MCP_CONNECTION_FILE=str(directory / "connection.json"))
+               ASEPRITE_MCP_ENABLE_RAW_LUA="0", ASEPRITE_MCP_RUNTIME_DIR=str(directory / "runtime"),
+               ASEPRITE_MCP_HOST="127.0.0.1", ASEPRITE_MCP_PORT="8765")
+    env.pop("ASEPRITE_MCP_CONNECTION_FILE", None)
+    connection = directory / "runtime/connection-127.0.0.1-8765.json"
     probe = subprocess.run([str(python), "-I", "-c", "import aseprite_mcp,json,sys;from importlib.metadata import version;print(json.dumps({'package':aseprite_mcp.__file__,'python':sys.version,'mcp':version('mcp'),'service':version('aseprite-mcp')}))"],
         env=env, cwd=directory, check=True, capture_output=True, text=True)
     versions = json.loads(probe.stdout)
@@ -106,12 +111,12 @@ async def verify(python, extension, aseprite, directory):
     with (directory / "server-stderr.log").open("w") as errors:
         started = time.perf_counter()
         try:
-            async with stdio_client(parameters, errlog=errors) as streams, ClientSession(*streams) as client:
+            async with stdio_client(parameters, errlog=errors) as streams, ClientSession(*streams, read_timeout_seconds=timedelta(seconds=30)) as client:
                 await client.initialize()
                 evidence["timings_ms"]["startup"] = (time.perf_counter() - started) * 1000
                 tools = await client.list_tools()
                 assert len(tools.tools) == 125 and "run_lua_script" not in {tool.name for tool in tools.tools}
-                async with installed_editor(directory, extension, aseprite, env["ASEPRITE_MCP_CONNECTION_FILE"]) as manual:
+                async with installed_editor(directory, extension, aseprite, directory / "runtime") as manual:
                     async def connected(exclude=None):
                         async with asyncio.timeout(20):
                             while True:
@@ -121,7 +126,8 @@ async def verify(python, extension, aseprite, directory):
                                 await asyncio.sleep(.05)
                     status = await connected()
                     evidence["editor"] = {key: status[key] for key in ("aseprite_version", "api_version", "service_version", "extension_version")}
-                    assert status["extension_version"] == versions["service"] == "0.1.0"
+                    assert status["extension_version"] == versions["service"]
+                    assert status["automatic_discovery"]
                     session = status["session_id"]
 
                     async def call(name, **args):
@@ -184,7 +190,7 @@ async def verify(python, extension, aseprite, directory):
                     disk_edit = await client.call_tool("cli_execute", {"request": request})
                     assert not disk_edit.isError, disk_edit
                     old = session
-                    await manual('local b=__aseprite_mcp_live;local f=assert(io.open(app.params.connection,"rb"));local c=json.decode(f:read("*a"));f:close();b:connect(c);return true')
+                    await manual('local b=__aseprite_mcp_live;b:disconnect();b.plugin.preferences.auto_connect=true;b:start_auto();return true')
                     status = await connected(old)
                     replay = await client.call_tool("cli_execute", {"request": request})
                     assert not replay.isError and replay.content == disk_edit.content, replay
@@ -193,7 +199,7 @@ async def verify(python, extension, aseprite, directory):
                     session = status["session_id"]
                     docs = await call("list_documents")
                     assert len(docs["data"]["documents"]) == 1 and docs["data"]["documents"][0]["saved"]
-                    evidence["checks"] = ["installed-site-packages", "125-tools-no-raw-lua", "packaged-extension-init", "unsaved-manual-edit",
+                    evidence["checks"] = ["installed-site-packages", "125-tools-no-raw-lua", "packaged-extension-init", "automatic-discovery-no-manual-JSON", "unsaved-manual-edit",
                         "atomic-batch-and-dedup", "MCP-image-content", "undo-redo-pixel-equality", "explicit-Chinese-save",
                         "overwrite-refusal", "installed-CLI-read-edit", "legacy-CLI-read", "reconnect-stale-session",
                         "CLI-receipt-survives-editor-reconnect"]
@@ -201,7 +207,7 @@ async def verify(python, extension, aseprite, directory):
             console = python.with_name("aseprite-mcp.exe")
             cli_parameters = StdioServerParameters(command=str(console), args=[],
                 env=dict(env, ASEPRITE_MCP_TOOL_PROFILE="cli"), cwd=str(directory))
-            async with stdio_client(cli_parameters, errlog=errors) as streams, ClientSession(*streams) as client:
+            async with stdio_client(cli_parameters, errlog=errors) as streams, ClientSession(*streams, read_timeout_seconds=timedelta(seconds=30)) as client:
                 await client.initialize()
                 assert len((await client.list_tools()).tools) == 116
                 read = await client.call_tool("cli_execute", {"request": {"request_id": "console-entry-read",
@@ -211,7 +217,7 @@ async def verify(python, extension, aseprite, directory):
         finally:
             # SDK 1.6.0 force-terminates its own child on Windows. Only this
             # harness's private discovery file is removed after the child exits.
-            connection = directory / "connection.json"
+            connection = directory / "runtime/connection-127.0.0.1-8765.json"
             if connection.exists():
                 connection.unlink()
     gc.collect()

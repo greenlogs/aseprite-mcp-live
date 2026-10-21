@@ -63,3 +63,7 @@ Python 3.13.15、MCP SDK 1.6.0、websockets 15.0.1、真实 Aseprite 1.3.7 / API
 ## P2 实际环境复核（2026-10-21）
 
 Windows NT 10.0.26200.0、uv 0.12.3、Python 3.13.15、MCP SDK 1.6.0、Aseprite 1.3.7/API 28；191 项回归通过。独立 uv 环境从 wheel 安装，扩展 ZIP 解压到隔离配置，双 stdio 启动入口及真实图片闭环通过；Edge 155.0.4283.62 显示核验。0.1.0/协议 v1 首版候选已验收未发布，详见 [P2-M2](progress/P2-M2.md)。本机软件路径仍仅见本文件前表。
+
+## 自动连接追加验收（2026-10-21）
+
+0.2.0、协议v1，Windows Aseprite1.3.7/API28：197项完整回归与默认8765自动连接/SDK强杀重启/自定义端口/独立安装通过；客户端仍为MCP SDK1.6.0与Edge155.0.4283.62图片视图。架构参考 [mcp-for-blender固定提交](https://github.com/ahujasid/mcp-for-blender/tree/5a3618fccb2d982d0dd61e7a1879912c3100073b) 的固定端口/自动启动体验；没有导入其代码，Aseprite仍使用官方WebSocket客户端方向。完整记录 [P2-M3](progress/P2-M3.md)。

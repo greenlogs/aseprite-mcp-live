@@ -52,7 +52,7 @@ P0 另执行 `uv build --out-dir .work/build`，检查 wheel 中的 `backends/cl
 
 `uv run --locked pytest -q tests/test_live_bridge.py tests/test_protocol.py tests/test_server.py --basetemp=.work/pytest-live`。其中 socket 用例模拟编辑器，real_extension_lifecycle 使用真实非 batch UI 进程与隔离 ASEPRITE_USER_FOLDER，安装 package.json 并验证 init/exit、连接/重连。测试仅对隔离目录夹具脚本预设读/写/socket 权限，不修改个人配置；Windows 隐藏启动测试窗口。
 
-开发扩展安装：将 extension 文件夹复制到 Aseprite 用户配置目录的 extensions/aseprite-mcp-live，重启后使用 File > Scripts > MCP: Connect / Settings。从 MCP get_connection_status 或服务 stderr 获取 connection_file 路径，在对话框选择此 JSON 并连接；首次按 Aseprite 权限对话框允许读取配置和回环连接。正式打包/安装验收在 P2。配置文件含临时凭据，不入库、不分享；服务退出后清理。
+开发扩展安装：将 extension 文件夹复制到 Aseprite 用户配置目录的 extensions/aseprite-mcp-live，0.2.0 起启用后自动等待默认 127.0.0.1:8765，无需选择文件；自定义端口在 File > Scripts > MCP: Connect / Settings 中设置。首次按 Aseprite 权限对话框允许读取配置和回环连接。配置文件含临时凭据，不入库、不分享；服务退出后清理。
 
 ## P1-M2 文档专项
 
@@ -60,7 +60,7 @@ P0 另执行 `uv build --out-dir .work/build`，检查 wheel 中的 `backends/cl
 
 ## P1 实时使用与图片验收
 
-先按前文加载开发扩展，启动 stdio MCP 服务并选择发现 JSON 连接；用 get_connection_status 获得 session_id。list_documents 返回会话 document_id 和 revision；读取后把明确目标及 revision 传给 apply_operations。批次支持 create_layer、set_opacity、pixel、rectangle，字段见[协议](development/PROTOCOL.md)。调用 get_preview(session_id,document_id,expected_revision,frame=1,scale=8) 可直接取得 PNG 图片块；undo/redo 后读取新 revision 再看图。未调用 save_sprite 不保存文件，保存仅支持 .aseprite/.ase 绝对路径，覆盖显式允许。
+先按前文加载开发扩展，启动 stdio MCP 服务等待扩展自动连接；用 get_connection_status 获得 session_id。list_documents 返回会话 document_id 和 revision；读取后把明确目标及 revision 传给 apply_operations。批次支持 create_layer、set_opacity、pixel、rectangle，字段见[协议](development/PROTOCOL.md)。调用 get_preview(session_id,document_id,expected_revision,frame=1,scale=8) 可直接取得 PNG 图片块；undo/redo 后读取新 revision 再看图。未调用 save_sprite 不保存文件，保存仅支持 .aseprite/.ase 绝对路径，覆盖显式允许。
 
 ```powershell
 # 专项：真实 MCP 图片、实际 PNG 像素/透明度、历史闭环和体积上限
@@ -71,12 +71,12 @@ uv run --locked pytest -q --basetemp=.work/pytest-p1-final --junitxml=.work/P1-f
 
 test_live_preview 以真实 MCP SDK 1.6.0 stdio 客户端完成闭环，在对应 pytest 临时目录生成 before/after/undo/redo PNG、client-gallery.html 和 client-evidence.json。用浏览器打开 HTML 确认实际显示；本次 Edge 155.0.4283.62 已实际渲染、截图并检查四图 64×64。像素、协议收到图片和显示成功是分开的验收步骤。最终本地证据保留于 .work/p1-evidence；不将临时图片/配置/凭据入库。
 
-SDK 1.6.0 的 Windows 客户端退出会强杀 stdio 子进程，可能留下发现文件；正常服务退出会清理。默认发现文件每进程独立；使用固定 ASEPRITE_MCP_CONNECTION_FILE 时，若重启提示文件已存在，先确认旧服务已退出，再移除这一个残留 JSON 并重启。不要删除仍在使用的连接配置。异常退出策略和正式安装在 P2 继续验收。
+SDK 1.6.0 的 Windows 客户端退出会强杀 stdio 子进程，可能留下发现文件；正常服务退出会清理。0.2.0 默认发现文件按 host/port 自动发布，下次成功绑定后替换残留；使用固定 ASEPRITE_MCP_CONNECTION_FILE 时，若重启提示文件已存在，先确认旧服务已退出，再移除这一个残留 JSON 并重启。不要删除仍在使用的连接配置。异常退出策略和正式安装在 P2 继续验收。
 
 ## P2-M1 故障回归
 
 `uv run --locked pytest -q tests/test_reliability.py --basetemp=.work/pytest-reliability`。
-前十个用例覆盖真实 socket 的模拟编辑器、取消/迟到/重复/旧会话/磁盘冲突及实际 Python 子进程清理；标记 real 的最后用例使用真实 UI 验证事件风暴、人工切换/修改/撤销、事务超预算回滚及执行后丢回执。完整上游与实时回归仍使用全文的全量命令。发现文件默认加随机 UUID；固定路径不自动清理残留。
+前十个用例覆盖真实 socket 的模拟编辑器、取消/迟到/重复/旧会话/磁盘冲突及实际 Python 子进程清理；标记 real 的最后用例使用真实 UI 验证事件风暴、人工切换/修改/撤销、事务超预算回滚及执行后丢回执。完整上游与实时回归仍使用全文的全量命令。0.2.0 默认按 host/port 自动发现；旧显式文件仍不自动清理残留。
 
 ## P2 隔离安装与阶段集成
 
@@ -84,7 +84,7 @@ SDK 1.6.0 的 Windows 客户端退出会强杀 stdio 子进程，可能留下发
 
 ```powershell
 # 将路径替换为实际位置；work-dir 必须是尚不存在的私有测试目录。
-uv run --locked python scripts/verify_install.py --python 'C:/Tools/aseprite-mcp/.venv/Scripts/python.exe' --extension 'C:/Downloads/aseprite-mcp/aseprite-mcp-live-0.1.0.aseprite-extension' --work-dir '.work/install-acceptance'
+uv run --locked python scripts/verify_install.py --python 'C:/Tools/aseprite-mcp/.venv/Scripts/python.exe' --extension 'C:/Downloads/aseprite-mcp/aseprite-mcp-live-0.2.0.aseprite-extension' --work-dir '.work/install-acceptance'
 ```
 
 也可将该脚本复制到隔离目录，用新安装环境 python.exe 直接执行；脚本只依赖 SDK、Pillow 和分发产物，不导入开发目录产品源码。服务用新环境 `python -I -m aseprite_mcp`、独立 cwd 启动，probe 确认从 site-packages 导入。扩展从 ZIP 精确清单解压至全新 ASEPRITE_USER_FOLDER，测试脚本仅对自身隔离文件预授权读/写/socket，不修改个人配置或绕过实际产品调用。
@@ -92,3 +92,9 @@ uv run --locked python scripts/verify_install.py --python 'C:/Tools/aseprite-mcp
 脚本完成未保存人工笔画、读取、整批编辑/去重、MCP ImageContent、撤销/重做像素相等、中文显式保存/覆盖拒绝、安装后公共 CLI 读写与旧工具读取、新会话拒绝旧 ID；验收使用 SDK 1.6.0 的真实 stdio 客户端。生成 acceptance.json、server-stderr.log、四幅实际收到的 PNG 与 client-gallery.html。用浏览器打开图库确认四图真实显示（64×64），截图与浏览器版本单独记录；收到数据和显示成功分别验收。
 
 全量回归仍用 `uv run --locked pytest -q --basetemp=.work/pytest-p2-final --junitxml=.work/P2-final.xml`。CI 的无 Aseprite 命令见 `.github/workflows/check.yml`；只包含模拟契约/真实 Python 子进程/本地 socket，不能代替真实 UI、干净安装或客户端显示。
+
+## P2-M3 自动连接专项
+
+`uv run --locked pytest -q tests/test_auto_connection.py --basetemp=.work/pytest-auto`。纯契约验证 CLI > 环境 > 默认、参数错误、固定端口占用、凭据原子发布/轮换和旧文件兼容。real 用例在隔离 UI 中验证先开编辑器再开服务、真实 SDK 强杀重启自动恢复、手动停止/恢复、自定义端口与旧会话失效；不在测试脚本中调用 connect() 或选择文件。conftest 给所有测试使用独立 ASEPRITE_MCP_RUNTIME_DIR，不读写个人运行目录。
+
+开发环境若 aseprite-mcp.exe 正被现有客户端占用，uv sync 可能无法替换 Windows 可执行文件。无需终止个人会话；可用既有环境 python.exe -B -m pytest 执行，再将新 wheel 安装到独立环境验证。升级日常环境时先停止客户端对应服务。独立包验收脚本已使用产品自动发现，继续覆盖完整图片/历史/保存与 CLI 链路。

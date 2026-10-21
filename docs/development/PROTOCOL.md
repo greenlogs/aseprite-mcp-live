@@ -10,7 +10,7 @@ P0 当时没有 WebSocket listener、Lua 扩展或真实实时编辑后端；P1 
 
 ## 传输、握手与对象
 
-MCP 使用 stdio；内部消息每个 WebSocket text frame 对应一个 UTF-8 JSON 对象，不使用 JSON-RPC 或二进制图片帧。内部监听只允许 `127.0.0.1` / `::1`，默认端口 0（由系统分配，P1 显示实际端口）；每次启动 `RuntimeConfig` 产生 32 随机字节的 token，不写入日志/来源文件。P1 提供本机配置入口给扩展，不把示例 token 用于真实启动。
+MCP 使用 stdio；内部消息每个 WebSocket text frame 对应一个 UTF-8 JSON 对象，不使用 JSON-RPC 或二进制图片帧。内部监听只允许 `127.0.0.1` / `::1`，默认端口 8765（0.2.0 起，CLI 可覆盖；port=0 为旧兼容入口）；每次启动 `RuntimeConfig` 产生 32 随机字节的 token，不写入日志/来源文件。P1 提供本机配置入口给扩展，不把示例 token 用于真实启动。
 
 扩展先发 `Handshake`：`type: hello`、`protocol_version: 1`、`token`、新 `session_id`、`aseprite_version`、`api_version`、`capabilities`。`negotiate` 比较 token、拒绝版本不符或 API < 28，返回与核心能力的交集。扩展仍需实际探测 API，版本号不证明每项能力可用。
 
@@ -118,3 +118,11 @@ CLI 及旧工具的 MCP 路径在线程运行，共享规范化磁盘路径锁�
 发布包 0.1.0/协议 v1。hello 新增可选 extension_version；提供版本且不等于服务版本时 VERSION_MISMATCH，旧开发扩展不提供时兼容但状态显示 null，应升级配套包。状态返回 service_version 与 extension_version，实际包版本由构建器同时核对 Python 常量、pyproject、Lua 与扩展清单。
 
 MCP SDK 1.6.0 在工具异常外加 Error executing tool 前缀。ContractServer 仅在此兼容边界解包异常链中的严格 Result，保证失败 TextContent 本身是可 JSON 解码的 Result，同时保持 isError=true；参数校验失败为 INVALID_REQUEST。成功内容与工具签名不变，SDK 升级须复测该边界。
+
+## P2-M3 自动发现与配置
+
+协议 v1 的业务请求/握手语义保持，服务与扩展配套版本 0.2.0。默认 host=127.0.0.1、port=8765；CLI --host/--port > ASEPRITE_MCP_HOST/PORT > 默认，localhost 规范化为 IPv4 回环，仅允许回环地址。状态新增 automatic_discovery，默认 true，显式 CONNECTION_FILE 或 port=0 时为 false。
+
+默认发现目录和路径见架构 P2-M3；服务独占端点后原子发布 url/token，退出仅清理匹配本次 token 的文件，强杀残留由同端点下一次启动替换。扩展轮询有 4096 字节读取上限和地址匹配验证，token 不写入偏好/日志；服务重启凭据变化建立新会话，旧目标/请求失效。用户关闭自动连接时停止定时器和连接，勾选后恢复；关闭/重载清理自有资源。无需用户获取/选择发现文件。
+
+port=0 和显式旧 CONNECTION_FILE 仍使用旧兼容规则（独占创建/手选 Legacy JSON）；它们禁用默认自动发现。自定义运行目录需同时传给两侧进程；仅设置客户端子进程环境不会影响已运行编辑器。端口冲突启动失败，不能静默切换目标或 CLI。

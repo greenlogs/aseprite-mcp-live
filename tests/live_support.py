@@ -18,7 +18,7 @@ async def until(predicate, timeout=15):
 
 
 @asynccontextmanager
-async def editor_process(directory, connection_file):
+async def editor_process(directory, connection_file, *, automatic=False):
     user = directory / "user"
     extension = user / "extensions" / "aseprite-mcp-live"
     shutil.copytree(ROOT / "extension", extension)
@@ -26,10 +26,8 @@ async def editor_process(directory, connection_file):
     control = directory / "control.json"
     response = directory / "control-result.json"
     command_file = directory / "control.lua"
-    boot.write_text('''
+    boot_source='''
 local bridge=assert(_G.__aseprite_mcp_live,"Extension init missing")
-local f=assert(io.open(app.params.connection,"rb")); local config=json.decode(f:read("*a")); f:close()
-bridge:connect(config)
 local last=0
 _G.test_timer=Timer{interval=0.04,ontick=function()
   local f=io.open(app.params.control,"rb")
@@ -44,7 +42,13 @@ _G.test_timer=Timer{interval=0.04,ontick=function()
   local out=assert(io.open(app.params.response,"wb"));out:write(json.encode(result));out:close()
 end}
 test_timer:start()
-''', encoding="utf-8")
+'''
+    if not automatic:
+        boot_source+='''
+local f=assert(io.open(app.params.connection,"rb")); local config=json.decode(f:read("*a")); f:close()
+bridge:connect(config)
+'''
+    boot.write_text(boot_source, encoding="utf-8")
     permissions = []
     for source in [boot, command_file, *extension.glob("*.lua")]:
         for filename in {str(source), source.as_posix()}:
@@ -74,8 +78,10 @@ test_timer:start()
         return result.get("data")
 
     with (directory / "aseprite.log").open("w") as log:
-        process = subprocess.Popen([os.environ["ASEPRITE_PATH"], "--script-param",
-            f"connection={connection_file}", "--script-param", f"control={control}",
+        args = [os.environ["ASEPRITE_PATH"]]
+        if not automatic:
+            args.extend(["--script-param", f"connection={connection_file}"])
+        process = subprocess.Popen([*args, "--script-param", f"control={control}",
             "--script-param", f"response={response}", "--script", str(boot)],
             env=dict(os.environ, ASEPRITE_USER_FOLDER=str(user)), startupinfo=startup,
             stdout=log, stderr=log)
