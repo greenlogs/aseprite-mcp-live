@@ -1,6 +1,6 @@
 # 动态项目结构
 
-最近复核：2026-10-21，P2-M3 自动连接与固定端口。结构说明唯一来源；实际与规划分开。
+最近复核：2026-10-22，P2-M4 无文件直连。结构说明唯一来源；实际与规划分开。
 
 ## 实际结构
 
@@ -23,7 +23,7 @@ aseprite-mcp/
 │  ├─ core/
 │  │  ├─ commands.py         上游进程/脚本执行；UTF-8、超时及错误
 │  │  ├─ protocol.py         v1 请求、批次、目标、结果、PNG、握手与上限类型
-│  │  ├─ config.py           回环/默认固定端口、运行目录发现路径、随机 token 和环境上限
+│  │  ├─ config.py           回环/默认固定端口、CLI/环境优先级与上限；不使用发现文件
 │  │  ├─ execution.py        Backend 接口、按资源队列、取消后确认、会话及去重
 │  │  ├─ files.py            CLI/旧工具共享的有限期线程磁盘锁
 │  │  ├─ legacy.py           旧 MCP CLI 工具的 worker 包装及失败映射
@@ -35,20 +35,20 @@ aseprite-mcp/
 │  ├─ backends/
 │  │  ├─ __init__.py         后端包
 │  │  ├─ cli.py              受控线程、JSON 参数、nonce 回执、文件提交与清理
-│  │  ├─ live.py             回环 WebSocket、按端口原子发布凭据与在线请求关联
+│  │  ├─ live.py             回环 WebSocket直连、原生Origin校验与在线请求关联
 │  │  └─ cli.lua             固定磁盘读取及批量普通 RGB 图层编辑脚本
 │  └─ tools/                 20 个上游 CLI 工具模块及 __init__.py，原名/参数保留
 ├─ extension/
-│  ├─ package.json           注册 main.lua 的 0.2.0 发布扩展清单
+│  ├─ package.json           注册 main.lua 的 0.3.0 发布扩展清单
 │  ├─ NOTICE.md              扩展包上游固定提交与许可归属
 │  ├─ main.lua               init/exit、延迟自动连接、菜单与重载清理
-│  ├─ bridge.lua             地址/端口设置、自动发现/重连/停止、握手与编辑端去重
+│  ├─ bridge.lua             地址/端口设置、直接连接/重连/停止、握手与编辑端去重；无选文件UI
 │  ├─ editor.lua             文档/图层注册、事件修订、事务/历史与保存
 │  └─ preview.lua            独立 Image 合成与内存 PNG/base64 编码
 ├─ tests/
 │  ├─ conftest.py            平台临时目录和每模块画布夹具
 │  ├─ test_environment.py    上游工具枚举、中文路径与真实像素核对
-│  ├─ test_auto_connection.py 默认/CLI 配置、发现原子性及真实 UI/服务重启自动连接
+│  ├─ test_auto_connection.py 默认/CLI配置、无文件契约/Origin和真实UI/服务重启直连
 │  ├─ test_reliability.py   取消/断线/迟到回执/磁盘修订及真实 UI 故障恢复
 │  ├─ test_protocol.py       协议、错误映射、模拟 live、去重与样例
 │  ├─ test_cli_backend.py    真实 CLI 纵向路径与进程/产物故障模拟
@@ -100,7 +100,7 @@ aseprite-mcp/
 | 测试 | `uv run --locked pytest -q --basetemp=.work/pytest`；详见 [TESTING](TESTING.md) |
 | 公共 CLI 路径 | Python Executor.execute(JSON) 或 CLI 配置的 MCP cli_execute |
 | 构建 | `uv run --locked python scripts/build_release.py --out-dir dist`；wheel/sdist/扩展/锁定依赖/摘要 |
-| 扩展加载 | `.aseprite-extension` 安装或解压至配置 extensions/aseprite-mcp-live；main.lua init/exit；默认自动发现 127.0.0.1:8765，设置可改端口 |
+| 扩展加载 | `.aseprite-extension` 安装或解压至配置 extensions/aseprite-mcp-live；main.lua init/exit；默认直接连接 127.0.0.1:8765，设置可改端口 |
 | 下一模块 | [P3-M1](development/prompts/P3-高级能力迁移.md#p3-m1)，尚未开始 |
 
 ## 规划结构：尚未实现
@@ -129,3 +129,7 @@ P2 阶段复核：191 项完整 Windows 回归，独立 site-packages/扩展 ZIP
 2026-10-21 P2-M3：固定默认端口 8765，命令行优先配置；运行凭据按 host/port 原子发布，扩展 Timer 自动读取/重连，停止和退出清理。服务/扩展版本 0.2.0，新增自动连接专项，独立安装验收改用产品启动逻辑。
 
 P2-M3 验收复核：197项全量、61项无软件检查、真实强杀重启自动恢复和0.2.0独立安装/图片显示通过。候选 .work/release-auto，证据 .work/auto-evidence，未推送或发布。
+
+2026-10-22 P2-M4：移除发现目录/连接文件/token及Legacy JSON UI；原生WebSocket直接连接配置端点，连接关闭/错误由Timer重建；全部实时夹具与独立安装验收移除读文件/传凭据路径。旧历史结构记录仅描述当时版本，不代表当前能力。
+
+P2-M4验收复核：197项全量、61项无软件检查、真实无文件读取/强杀重启/独立安装和客户端图片显示通过。当前候选.work/release-direct，证据.work/direct-evidence；0.3.0未发布。

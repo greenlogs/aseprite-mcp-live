@@ -34,8 +34,8 @@ class Executor:
         self._locks = {}
         self._inflight = {}
 
-    def attach_live(self, backend: Backend, hello: Handshake, token: str):
-        capabilities = negotiate(hello, token)
+    def attach_live(self, backend: Backend, hello: Handshake):
+        capabilities = negotiate(hello)
         if self.live is not None:
             raise BackendError(ErrorCode.SESSION_MISMATCH, "An editor is already attached")
         self.live, self.session_id = backend, hello.session_id

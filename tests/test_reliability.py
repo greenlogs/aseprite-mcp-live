@@ -29,8 +29,8 @@ def wire(name="undo", session="s", request_id="once", **extra):
 
 
 def attach(executor, backend, session="s"):
-    executor.attach_live(backend, Handshake(protocol_version=1, token="test", session_id=session,
-        aseprite_version="1.3.7", api_version=28, capabilities=sorted(CORE_CAPABILITIES)), "test")
+    executor.attach_live(backend, Handshake(protocol_version=1, session_id=session,
+        aseprite_version="1.3.7", api_version=28, capabilities=sorted(CORE_CAPABILITIES)))
 
 
 def test_cancelled_waiter_keeps_receipt_and_single_execution():
@@ -92,15 +92,14 @@ def test_cancelled_cli_thread_finishes_before_duplicate_and_other_file_runs(tmp_
 
 @pytest.mark.parametrize("drop", ["before", "after", "late"])
 def test_socket_lost_or_late_write_receipt_is_not_replayed(tmp_path, monkeypatch, drop):
-    monkeypatch.setenv("ASEPRITE_MCP_CONNECTION_FILE", str(tmp_path / "connection.json"))
 
     async def scenario():
         limits = Limits(timeout_seconds=.08)
         executor = Executor(None, limits)
-        bridge = LiveBridge(executor, RuntimeConfig(token="test", limits=limits))
+        bridge = LiveBridge(executor, RuntimeConfig(limits=limits))
         async with bridge.lifespan():
             async with connect(bridge.url) as ws:
-                hello = Handshake(protocol_version=1, token="test", session_id="s", aseprite_version="1.3.7",
+                hello = Handshake(protocol_version=1, session_id="s", aseprite_version="1.3.7",
                     api_version=28, capabilities=["undo"])
                 await ws.send(hello.model_dump_json())
                 await ws.recv()
@@ -175,24 +174,15 @@ def test_editor_reconnect_preserves_cli_write_receipt(tmp_path):
     run(scenario())
 
 
-def test_existing_discovery_and_port_collision_are_explicit(tmp_path, monkeypatch):
-    path = tmp_path / "connection.json"
-    path.write_text('{"token":"someone-else"}')
-    monkeypatch.setenv("ASEPRITE_MCP_CONNECTION_FILE", str(path))
-
+def test_port_collision_is_explicit_and_never_changes_endpoint():
     async def scenario():
-        with pytest.raises(RuntimeError, match="already exists"):
-            async with LiveBridge(Executor(None), RuntimeConfig()).lifespan():
-                pass
-        assert path.read_text() == '{"token":"someone-else"}'
-        monkeypatch.setenv("ASEPRITE_MCP_CONNECTION_FILE", str(tmp_path / "first.json"))
         first = LiveBridge(Executor(None), RuntimeConfig())
         async with first.lifespan():
-            port = int(first.url.rsplit(":", 1)[1])
-            second = LiveBridge(Executor(None), RuntimeConfig(port=port))
-            with pytest.raises(OSError):
+            second = LiveBridge(Executor(None), RuntimeConfig())
+            with pytest.raises(OSError, match="choose another --port"):
                 async with second.lifespan():
-                    pass
+                    pytest.fail("Must not silently change port")
+            assert first.url == "ws://127.0.0.1:8765"
     run(scenario())
 
 
@@ -253,13 +243,12 @@ def test_legacy_worker_keeps_loop_responsive_and_same_file_serial(tmp_path):
 
 @pytest.mark.real
 def test_real_editor_faults_recovery_and_limits(tmp_path, monkeypatch):
-    monkeypatch.setenv("ASEPRITE_MCP_CONNECTION_FILE", str(tmp_path / "connection.json"))
 
     async def scenario():
         limits = Limits(timeout_seconds=.6)
         executor = Executor(None, limits)
         bridge = LiveBridge(executor, RuntimeConfig(limits=limits))
-        async with bridge.lifespan(), editor_process(tmp_path, bridge.connection_file) as manual:
+        async with bridge.lifespan(), editor_process(tmp_path) as manual:
             await until(lambda: executor.live is not None)
             async def call(name, document=None, revision=None, **params):
                 request = {"request_id": uuid4().hex, "target": {"backend": "live", "session_id": executor.session_id},
@@ -325,8 +314,7 @@ return true
             assert await manual('return #test_source.layers') == 1
             old_session = executor.session_id
             await manual('''
-local b=__aseprite_mcp_live; local f=assert(io.open(app.params.connection,"rb"))
-local c=json.decode(f:read("*a"));f:close();b:connect(c);return true
+__aseprite_mcp_live:connect();return true
 ''')
             await until(lambda: executor.session_id not in (None, old_session))
             assert (await executor.execute(raw)).error.code == "SESSION_MISMATCH"

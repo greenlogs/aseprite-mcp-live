@@ -18,18 +18,17 @@ from conftest import run
 
 
 def test_socket_handshake_routing_dedup_and_cleanup(tmp_path, monkeypatch):
-    monkeypatch.setenv("ASEPRITE_MCP_CONNECTION_FILE", str(tmp_path / "connection.json"))
 
     async def scenario():
         config = RuntimeConfig()
         executor = Executor(None)
         bridge = LiveBridge(executor, config)
         async with bridge.lifespan():
-            for patch, code in [({"token": "wrong"}, "SESSION_MISMATCH"),
+            for patch, code in [({"token": "obsolete"}, "INVALID_REQUEST"),
                                 ({"protocol_version": 2}, "VERSION_MISMATCH"),
                                 ({"api_version": 27}, "UNSUPPORTED_CAPABILITY")]:
                 async with connect(bridge.url) as ws:
-                    hello = Handshake(protocol_version=1, token=config.token, session_id="s",
+                    hello = Handshake(protocol_version=1, session_id="s",
                                       aseprite_version="1.3.7", api_version=28, capabilities=["list_documents"])
                     await ws.send(json.dumps(hello.model_dump() | patch))
                     assert json.loads(await ws.recv())["error"]["code"] == code
@@ -40,6 +39,9 @@ def test_socket_handshake_routing_dedup_and_cleanup(tmp_path, monkeypatch):
                     await second.send(hello.model_dump_json())
                     assert json.loads(await second.recv())["error"]["code"] == "SESSION_MISMATCH"
                 assert executor.live is not None
+                await ws.send('{"type":"ping"}')
+                assert json.loads(await ws.recv()) == {"type": "pong"}
+                assert not executor.live.pending
                 request = json.dumps({"request_id": "read", "target": {"backend": "live", "session_id": "s"},
                                       "action": {"name": "list_documents"}})
                 task = asyncio.create_task(executor.execute(request))
@@ -52,7 +54,6 @@ def test_socket_handshake_routing_dedup_and_cleanup(tmp_path, monkeypatch):
                 assert json.loads(await ws.recv())["error"]["code"] == "INVALID_REQUEST"
             await asyncio.sleep(.05)
             assert executor.live is None
-        assert not bridge.connection_file.exists()
         # No residual listening socket; can immediately reuse the same port.
         async with bridge.lifespan():
             assert bridge.url
@@ -62,7 +63,6 @@ def test_socket_handshake_routing_dedup_and_cleanup(tmp_path, monkeypatch):
 @pytest.mark.real
 def test_real_extension_lifecycle(tmp_path, monkeypatch):
     """A real non-batch 1.3.7 process loads package.json and calls init/exit."""
-    monkeypatch.setenv("ASEPRITE_MCP_CONNECTION_FILE", str(tmp_path / "connection.json"))
     root = Path(__file__).resolve().parents[1]
     user = tmp_path / "user"
     shutil.copytree(root / "extension", user / "extensions" / "aseprite-mcp-live")
@@ -70,12 +70,11 @@ def test_real_extension_lifecycle(tmp_path, monkeypatch):
     marker = tmp_path / "lifecycle.json"
     script.write_text('''
 local instance=assert(_G.__aseprite_mcp_live, "Extension package did not initialize")
-local f=assert(io.open(app.params.connection,"rb")); local config=json.decode(f:read("*a")); f:close()
 local phase=0; local ticks=0
 local function mark(value)
   local f=assert(io.open(app.params.marker,"wb")); f:write(json.encode(value)); f:close()
 end
-instance:connect(config)
+instance:connect()
 local timer
 timer=Timer{interval=0.1,ontick=function()
   ticks=ticks+1
@@ -85,7 +84,7 @@ timer=Timer{interval=0.1,ontick=function()
     local f=io.open(app.params.proceed,"rb")
     if f then f:close(); instance:disconnect(); phase=2 end
   elseif phase==2 then
-    instance:connect(config); phase=3
+    instance:connect(); phase=3
   elseif phase==3 and instance.ready then
     phase=4; mark{phase="reconnected",session=instance.session,api=app.apiVersion}
   elseif phase==4 then
@@ -119,7 +118,7 @@ timer:start()
             startup.wShowWindow = 0
             with (tmp_path / "aseprite.log").open("w") as log:
                 process = subprocess.Popen([os.environ["ASEPRITE_PATH"], "--script-param",
-                    f"connection={bridge.connection_file}", "--script-param", f"marker={marker}",
+                    f"marker={marker}",
                     "--script-param", f"proceed={tmp_path / 'proceed'}", "--script-param",
                     f"finish={tmp_path / 'finish'}", "--script", str(script)],
                     env=dict(os.environ, ASEPRITE_USER_FOLDER=str(user)), startupinfo=startup,

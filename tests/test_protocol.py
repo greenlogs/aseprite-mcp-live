@@ -24,7 +24,7 @@ def wire(action="get_document_info", backend="live", **changes):
 
 
 def hello(**changes):
-    fields = dict(protocol_version=1, token="secret", session_id="session-1",
+    fields = dict(protocol_version=1, session_id="session-1",
                   aseprite_version="1.3.7", api_version=28, capabilities=sorted(CORE_CAPABILITIES))
     fields.update(changes)
     return Handshake(**fields)
@@ -47,7 +47,7 @@ class FakeBackend:
 def attached(error=None, limits=None):
     backend = FakeBackend(error)
     executor = Executor(FakeBackend(), limits)
-    executor.attach_live(backend, hello(), "secret")
+    executor.attach_live(backend, hello())
     return executor, backend
 
 
@@ -76,15 +76,14 @@ def test_malformed_messages(raw):
     assert run(attached()[0].execute(raw)).error.code == ErrorCode.INVALID_REQUEST
 
 
-def test_version_and_startup_authentication():
+def test_version_and_capabilities():
     for change, code in [({"protocol_version": 2}, ErrorCode.VERSION_MISMATCH),
                          ({"extension_version": "0.0.0"}, ErrorCode.VERSION_MISMATCH),
-                         ({"token": "wrong"}, ErrorCode.SESSION_MISMATCH),
                          ({"api_version": 27}, ErrorCode.UNSUPPORTED_CAPABILITY)]:
         with pytest.raises(BackendError) as error:
-            negotiate(hello(**change), "secret")
+            negotiate(hello(**change))
         assert error.value.code == code
-    assert negotiate(hello(capabilities=["get_document_info", "future"]), "secret") == {"get_document_info"}
+    assert negotiate(hello(capabilities=["get_document_info", "future"])) == {"get_document_info"}
     result = run(attached()[0].execute(json.dumps(wire(protocol_version=2))))
     assert result.error.code == ErrorCode.VERSION_MISMATCH
 
@@ -94,17 +93,17 @@ def test_no_fallback_and_stale_session():
     executor = Executor(cli)
     assert run(executor.execute(json.dumps(wire()))).error.code == ErrorCode.NOT_CONNECTED
     assert cli.calls == 0
-    executor.attach_live(FakeBackend(), hello(), "secret")
+    executor.attach_live(FakeBackend(), hello())
     request = wire()
     request["target"]["session_id"] = "old-session"
     assert run(executor.execute(json.dumps(request))).error.code == ErrorCode.SESSION_MISMATCH
     with pytest.raises(BackendError):
-        executor.attach_live(FakeBackend(), hello(session_id="second"), "secret")
+        executor.attach_live(FakeBackend(), hello(session_id="second"))
 
 
 def test_capability_negotiation_is_enforced():
     executor = Executor(FakeBackend())
-    executor.attach_live(FakeBackend(), hello(capabilities=[]), "secret")
+    executor.attach_live(FakeBackend(), hello(capabilities=[]))
     assert run(executor.execute(json.dumps(wire()))).error.code == ErrorCode.UNSUPPORTED_CAPABILITY
 
 
@@ -154,7 +153,6 @@ def test_limits_and_batch_references():
 def test_runtime_config(monkeypatch):
     monkeypatch.setenv("ASEPRITE_MCP_MAX_OPERATIONS", "12")
     assert RuntimeConfig.from_env().limits.max_operations == 12
-    assert RuntimeConfig().token != RuntimeConfig().token
     with pytest.raises(ValueError):
         RuntimeConfig(host="0.0.0.0")
 
@@ -179,7 +177,7 @@ def test_mismatched_receipt_is_unknown():
         async def execute(self, request):
             return Result(request_id="other", target=request.target, ok=True)
     executor = Executor(FakeBackend())
-    executor.attach_live(Wrong(), hello(), "secret")
+    executor.attach_live(Wrong(), hello())
     assert run(executor.execute(json.dumps(wire()))).error.code == ErrorCode.RESULT_UNKNOWN
 
 
@@ -189,7 +187,7 @@ def test_live_deadline_distinguishes_unknown_edit():
             await asyncio.sleep(0.1)
     async def scenario():
         executor = Executor(FakeBackend(), Limits(timeout_seconds=0.01))
-        executor.attach_live(Slow(), hello(), "secret")
+        executor.attach_live(Slow(), hello())
         assert (await executor.execute(json.dumps(wire()))).error.code == ErrorCode.TIMEOUT
         request = wire("undo", expected_revision=1, request_id="edit-1")
         assert (await executor.execute(json.dumps(request))).error.code == ErrorCode.RESULT_UNKNOWN
@@ -200,7 +198,7 @@ def test_frozen_protocol_examples():
     examples = json.loads((Path(__file__).parents[1] / "docs/development/protocol-v1.examples.json").read_text(encoding="utf-8"))
     parsed_hello = Handshake.model_validate_json(json.dumps(examples["hello"]))
     welcome = Welcome.model_validate_json(json.dumps(examples["welcome"]))
-    assert set(welcome.capabilities) == negotiate(parsed_hello, "example-startup-token")
+    assert set(welcome.capabilities) == negotiate(parsed_hello)
     for request in examples["requests"]:
         assert parse_request(json.dumps(request), Limits()).request_id
     for result in examples["results"]:

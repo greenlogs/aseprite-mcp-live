@@ -15,12 +15,11 @@ from live_support import editor_process, until
 
 @pytest.mark.real
 def test_real_documents_transactions_history_save(tmp_path, monkeypatch):
-    monkeypatch.setenv("ASEPRITE_MCP_CONNECTION_FILE", str(tmp_path / "connection.json"))
 
     async def scenario():
         executor = Executor(None)
         bridge = LiveBridge(executor, RuntimeConfig())
-        async with bridge.lifespan(), editor_process(tmp_path, bridge.connection_file) as manual:
+        async with bridge.lifespan(), editor_process(tmp_path) as manual:
             await until(lambda: executor.live is not None)
             # Welcome is processed asynchronously on the editor's UI thread.
             await until(lambda: bridge.hello is not None)

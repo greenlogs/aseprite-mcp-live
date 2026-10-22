@@ -11,7 +11,7 @@ uv run --locked python scripts/build_release.py --out-dir dist
 uv run --locked python scripts/build_release.py --out-dir dist --check-only
 ```
 
-0.2.0 候选包含 wheel、源码 tar.gz、`.aseprite-extension`、生产依赖 requirements.txt、manifest.json 和 SHA256SUMS。扩展为确定时间戳、排序后的 ZIP，根部直接为 manifest/四个 Lua/许可与 NOTICE；构建器核对 manifest、Lua 握手和 Python 服务版本对应协议 v1。requirements.txt 来自 uv.lock，不包含源码编辑安装或开发依赖。
+0.3.0 候选包含 wheel、源码 tar.gz、`.aseprite-extension`、生产依赖 requirements.txt、manifest.json 和 SHA256SUMS。扩展为确定时间戳、排序后的 ZIP，根部直接为 manifest/四个 Lua/许可与 NOTICE；构建器核对 manifest、Lua 握手和 Python 服务版本对应协议 v1。requirements.txt 来自 uv.lock，不包含源码编辑安装或开发依赖。
 
 wheel 只含 aseprite_mcp 包、元数据及 MIT 许可，必须包含 backends/cli.lua 和 stdio 脚本入口。源码包白名单包含源码/扩展/测试/构建脚本/文档/锁文件，保留上游来源及许可。构建器逐一检查包清单，拒绝本地软件、可执行程序、个人 .env/.codex/.agents、恢复会话和缓存；本地 Aseprite/ 不分发。扩展 NOTICE 记录上游固定提交，未打包字体/图片资源；Python 依赖按各自许可从包索引安装，不打入本项目 wheel。
 
@@ -35,3 +35,7 @@ wheel 只含 aseprite_mcp 包、元数据及 MIT 许可，必须包含 backends/
 0.2.0 候选新增固定端口、命令行参数与扩展自动发现，实际结果见 [P2-M3](progress/P2-M3.md)。verify_install.py 使用产品自动连接流程，不再由测试注入 connect() 或读取凭据。
 
 0.2.0 最终本地结论：197项完整回归、自动发现/强杀重启与新环境安装真实闭环通过；候选在 .work/release-auto，尚未远程发布。历史 .work/release 的0.1.0包保留为旧验收证据，安装新版本使用0.2.0配套服务和扩展。
+
+0.3.0 改用固定端点直接握手，移除发现文件、token和扩展选JSON入口；服务/扩展必须配套升级。当前追加验收见 [P2-M4](progress/P2-M4.md)。历史0.1/0.2候选记录保留，不代表当前连接流程。
+
+2026-10-22：0.3.0无文件直连候选已验收，197项全量/61项无软件检查/独立安装真实闭环与显示通过。当前候选.work/release-direct；旧release/release-auto保留历史，尚未远程发布。

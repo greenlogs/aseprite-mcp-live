@@ -2,7 +2,6 @@
   "hello": {
     "type": "hello",
     "protocol_version": 1,
-    "token": "example-startup-token",
     "session_id": "session-1",
     "aseprite_version": "1.3.7",
     "api_version": 28,
@@ -11,7 +10,7 @@
       "apply_operations",
       "get_preview"
     ],
-    "extension_version": "0.2.0"
+    "extension_version": "0.3.0"
   },
   "welcome": {
     "type": "welcome",

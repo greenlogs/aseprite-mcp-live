@@ -25,8 +25,7 @@ from live_support import editor_process, until
 @pytest.mark.real
 def test_real_mcp_preview_and_phase_integration(tmp_path):
     async def scenario():
-        connection = tmp_path / "connection.json"
-        env = dict(os.environ, ASEPRITE_MCP_TOOL_PROFILE="core", ASEPRITE_MCP_CONNECTION_FILE=str(connection))
+        env = dict(os.environ, ASEPRITE_MCP_TOOL_PROFILE="core")
         started = time.perf_counter()
         timings = {}
         gallery = []
@@ -34,7 +33,7 @@ def test_real_mcp_preview_and_phase_integration(tmp_path):
         async with stdio_client(parameters) as streams, ClientSession(*streams) as client:
             initialized = await client.initialize()
             timings["mcp_startup_ms"] = round((time.perf_counter() - started) * 1000, 2)
-            async with editor_process(tmp_path, connection) as manual:
+            async with editor_process(tmp_path) as manual:
                 async with asyncio.timeout(15):
                     while True:
                         status = await client.call_tool("get_connection_status", {})
@@ -168,9 +167,6 @@ return true
                 assert not list(tmp_path.glob("*.aseprite"))
         gc.collect()
         await asyncio.sleep(.05)
-        # SDK 1.6.0 forcibly terminates its stdio child on Windows; its finally
-        # handlers cannot run. This fixture removes only its own discovery file.
-        connection.unlink(missing_ok=True)
         # A minimal real MCP client gallery renders exactly the received image blocks.
         html = '<!doctype html><meta charset="utf-8"><title>P1 MCP image verification</title>'
         html += '<style>body{background:#20242c;color:#eee;font:16px sans-serif;display:flex;gap:20px;flex-wrap:wrap}img{width:192px;height:192px;object-fit:contain;image-rendering:pixelated}figure{margin:20px}</style>'
@@ -186,13 +182,12 @@ return true
 @pytest.mark.real
 @pytest.mark.parametrize("limit", ["max_png_bytes", "max_message_bytes"])
 def test_real_preview_limits_without_mutation(tmp_path, monkeypatch, limit):
-    monkeypatch.setenv("ASEPRITE_MCP_CONNECTION_FILE", str(tmp_path / "connection.json"))
 
     async def scenario():
         limits = Limits(**{limit: 500 if limit == "max_png_bytes" else 2100})
         executor = Executor(None, limits)
         bridge = LiveBridge(executor, RuntimeConfig(limits=limits))
-        async with bridge.lifespan(), editor_process(tmp_path, bridge.connection_file) as manual:
+        async with bridge.lifespan(), editor_process(tmp_path) as manual:
             await until(lambda: executor.live is not None)
             created = await executor.execute(json.dumps({"request_id": "create", "target": {
                 "backend": "live", "session_id": executor.session_id}, "action": {

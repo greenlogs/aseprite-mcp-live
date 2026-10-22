@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import base64
-import hmac
 import io
 from enum import StrEnum
 from typing import Annotated, Literal
@@ -10,7 +9,7 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
 PROTOCOL_VERSION = 1
-SERVICE_VERSION = "0.2.0"
+SERVICE_VERSION = "0.3.0"
 CORE_CAPABILITIES = frozenset({
     "list_documents", "get_document_info", "create_sprite", "apply_operations",
     "get_preview", "save_sprite", "undo", "redo",
@@ -63,7 +62,6 @@ class Limits(Model):
 class Handshake(Model):
     type: Literal["hello"] = "hello"
     protocol_version: int
-    token: str = Field(min_length=1, repr=False)
     session_id: Identifier
     aseprite_version: Identifier
     api_version: Positive
@@ -79,13 +77,11 @@ class Welcome(Model):
     limits: Limits
 
 
-def negotiate(hello: Handshake, token: str) -> frozenset[str]:
+def negotiate(hello: Handshake) -> frozenset[str]:
     if hello.protocol_version != PROTOCOL_VERSION:
         raise BackendError(ErrorCode.VERSION_MISMATCH, "Protocol version must be 1")
     if hello.extension_version is not None and hello.extension_version != SERVICE_VERSION:
         raise BackendError(ErrorCode.VERSION_MISMATCH, "Install matching service and extension versions")
-    if not hmac.compare_digest(hello.token.encode(), token.encode()):
-        raise BackendError(ErrorCode.SESSION_MISMATCH, "Invalid startup token")
     if hello.api_version < 28:
         raise BackendError(ErrorCode.UNSUPPORTED_CAPABILITY, "Aseprite API 28+ required")
     return frozenset(hello.capabilities) & CORE_CAPABILITIES

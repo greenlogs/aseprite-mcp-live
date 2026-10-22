@@ -1,6 +1,6 @@
 -- Aseprite 1.3.7 uses (message, data); do not require the newer error argument.
 local M = {}
-local EXTENSION_VERSION = "0.2.0"
+local EXTENSION_VERSION = "0.3.0"
 
 local function environment(name)
   local value=os.getenv(name)
@@ -14,19 +14,10 @@ local function endpoint(plugin)
   assert(port and port%1==0 and port>=1 and port<=65535,"Port must be an integer from 1 to 65535")
   return host,port
 end
-local function discovery(plugin)
-  local explicit=environment("ASEPRITE_MCP_CONNECTION_FILE")
-  if explicit then return explicit end
+local function endpoint_url(plugin)
   local host,port=endpoint(plugin)
-  local root=environment("ASEPRITE_MCP_RUNTIME_DIR")
-  if not root then
-    local base=environment("LOCALAPPDATA") or environment("XDG_RUNTIME_DIR") or
-      environment("TMPDIR") or environment("TEMP") or "/tmp"
-    root=app.fs.joinPath(base,"aseprite-mcp")
-  end
   local address=host=="::1" and "[::1]" or host
-  return app.fs.joinPath(root,"connection-"..host:gsub(":","_").."-"..port..".json"),
-    "ws://"..address..":"..port
+  return "ws://"..address..":"..port
 end
 -- API 28 JSON objects are userdata; json.encode does not serialize nested
 -- JSON userdata inside Lua tables. Normalize incoming messages recursively.
@@ -55,29 +46,27 @@ function M.new(plugin)
     if self.ws then local ws=self.ws; self.ws=nil; ws:close() end
     if self.editor then self.editor:close(); self.editor=nil end
     self.cache={}; self.order={}; self.session=nil
-    self.connection_url=nil; self.connection_token=nil
+    self.connection_url=nil
+    self.opened=false; self.last_pong=nil
     self:set_status("Disconnected")
   end
   function self:shutdown()
     self:stop_auto()
     self:disconnect(false)
     if self.dialog then self.dialog:close(); self.dialog=nil end
-    if self.legacy_dialog then self.legacy_dialog:close(); self.legacy_dialog=nil end
   end
-  function self:connect(config)
+  function self:connect()
+    local url=endpoint_url(plugin)
     self:disconnect(false)
-    if (type(config) ~= "table" and type(config) ~= "userdata") or type(config.url) ~= "string" or
-        not (config.url:match("^ws://127%.0%.0%.1:%d+$") or config.url:match("^ws://%[::1%]:%d+$")) or
-        type(config.token) ~= "string" or #config.token==0 then
-      error("Invalid loopback connection configuration")
-    end
     assert(WebSocket and json and json.encode and json.decode and app.apiVersion>=28,
            "Aseprite API 28, WebSocket and JSON required")
-    self.connection_url=config.url; self.connection_token=config.token
+    self.connection_url=url
+    self.connect_started=os.time()
     local generation=self.generation
     local function receive(kind, data)
       if generation~=self.generation then return end
       if kind==WebSocketMessageType.OPEN then
+        self.opened=true; self.last_pong=os.time()
         -- Every reconnect gets a fresh namespace; no cached old-session writes.
         self.cache={}; self.order={}; self.ready=false
         if self.editor then self.editor:close(); self.editor=nil end
@@ -87,7 +76,7 @@ function M.new(plugin)
           if string.pack then capabilities[#capabilities+1]="get_preview" end
         end
         self.session=tostring(os.time()).."-"..tostring(math.random(1,2147483647)).."-"..tostring(generation)
-        self.ws:sendText(json.encode{type="hello", protocol_version=1, token=config.token,
+        self.ws:sendText(json.encode{type="hello", protocol_version=1,
           session_id=self.session, aseprite_version=tostring(app.version), api_version=app.apiVersion,
           extension_version=EXTENSION_VERSION,
           capabilities=capabilities})
@@ -97,6 +86,7 @@ function M.new(plugin)
         if not ok or (type(message)~="table" and type(message)~="userdata") then
           self:set_status("Invalid server message"); return
         end
+        if message.type=="pong" then self.last_pong=os.time(); return end
         if message.type=="welcome" then
           if message.protocol_version~=1 or message.session_id~=self.session then
             self:disconnect(false); self:set_status("Invalid welcome"); return
@@ -139,40 +129,34 @@ function M.new(plugin)
         while #self.order>self.limits.dedup_entries do self.cache[table.remove(self.order,1)]=nil end
         self.ws:sendText(encoded)
       elseif kind==WebSocketMessageType.CLOSE then
-        if self.editor then self.editor:close(); self.editor=nil end
-        self.ready=false; self:set_status("Disconnected / reconnecting")
+        -- API 28's socket can remain stuck after its peer is force-killed.
+        -- Retire it; the single auto timer creates a fresh connection.
+        self:disconnect(false)
+        self:set_status("Disconnected / reconnecting")
       elseif kind==WebSocketMessageType.ERROR then
-        self.ready=false; self:set_status("Connection failed; check server and configuration")
+        self:disconnect(false)
+        self:set_status("Connection failed; check host and port")
       end
     end
-    self.ws=WebSocket{url=config.url, onreceive=receive, deflate=false, minreconnectwait=1,maxreconnectwait=5}
+    self.ws=WebSocket{url=url, onreceive=receive, deflate=false, minreconnectwait=1,maxreconnectwait=5}
     self:set_status("Connecting"); self.ws:connect()
   end
   function self:stop_auto()
     if self.auto_timer then self.auto_timer:stop(); self.auto_timer=nil end
   end
   function self:poll_connection()
-    local path,expected_url=discovery(plugin)
-    self.discovery_path=path
-    local f=io.open(path,"rb")
-    if not f then
-      if not self.ready then self:set_status("Waiting for MCP server...") end
-      return
+    local url=endpoint_url(plugin)
+    if self.ws and os.time()-(self.last_pong or self.connect_started or os.time())>=5 then
+      self:disconnect(false)
     end
-    -- Never read an unbounded or partial discovery payload on the UI thread.
-    local raw=f:read(4097); f:close()
-    assert(raw and #raw<=4096,"Invalid connection information; restart the MCP server")
-    local config=json.decode(raw)
-    assert(not expected_url or config.url==expected_url,"Connection address mismatch; check host and port")
-    if not self.ws or self.connection_url~=config.url or self.connection_token~=config.token then
-      self:connect(config)
-    end
+    if not self.ws or self.connection_url~=url then self:connect()
+    elseif self.opened then self.ws:sendText('{"type":"ping"}') end
   end
   function self:start_auto()
     self:stop_auto()
     if plugin.preferences.auto_connect==false then return end
     assert(Timer,"Aseprite Timer API required for automatic connection")
-    -- Defer file/socket permissions until extension registration has completed.
+    -- Defer socket permissions until extension registration has completed.
     self.auto_timer=Timer{interval=1.0,ontick=function()
       local ok,err=pcall(function() self:poll_connection() end)
       if not ok then self:set_status("Auto-connect: "..tostring(err)) end
@@ -201,24 +185,7 @@ function M.new(plugin)
         if not ok then self:set_status(tostring(err)) end
       end}
       :button{text="Disconnect",onclick=function() self:disconnect() end}
-      :button{text="Legacy JSON...",onclick=function() self:legacy_settings() end}
       :show{wait=false}
-  end
-  function self:legacy_settings()
-    local dlg=Dialog{title="MCP Legacy Connection"}
-    if self.legacy_dialog then self.legacy_dialog:close() end
-    self.legacy_dialog=dlg
-    dlg:file{id="config",label="Connection JSON",filename=plugin.preferences.connection_file or "",open=true}
-      :button{text="Connect",onclick=function()
-        local ok,err=pcall(function()
-          local path=dlg.data.config
-          local f=assert(io.open(path,"rb"),"Cannot open connection file")
-          local raw=f:read(4097); f:close(); assert(raw and #raw<=4096,"Connection file too large")
-          self:stop_auto(); plugin.preferences.auto_connect=false
-          self:connect(json.decode(raw)); plugin.preferences.connection_file=path
-        end)
-        if not ok then self:set_status(tostring(err)) end
-      end}:show{wait=false}
   end
   return self
 end

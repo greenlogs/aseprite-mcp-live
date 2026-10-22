@@ -1,128 +1,97 @@
-# 协议 v1 与执行接口（P0-M2 冻结）
+# 协议v1与执行接口
 
-实施位置：`aseprite_mcp/core/protocol.py` 为类型及校验唯一来源；`config.py` 为运行上限，`execution.py` 为路由、会话及去重，`backends/cli.py` / `cli.lua` 为真实磁盘适配器，`server.py` 为 MCP 暴露。可校验[样例](protocol-v1.examples.json)，由 `tests/test_protocol.py` 持续验收。
+当前服务/扩展0.3.0。业务Request/Result维持v1；hello已移除token，原0.1/0.2发现文件和认证握手必须配套升级。模型唯一来源core/protocol.py；[可校验样例](protocol-v1.examples.json)由test_protocol验证。实际架构见[ARCHITECTURE](ARCHITECTURE.md)，历史契约见各版本交接，不用于当前安装。
 
-## 当前实现与后续实现
+## 连接与握手
 
-P0 已实现类型、认证/协商函数、执行接口、单会话路由、去重、CLI 纵向路径和 stdio MCP。`Backend` 提供 `capabilities: frozenset[str]` 与 `async execute(Request) -> Result`。公共入口为 `Executor.execute(JSON str/bytes) -> Result`，业务参数经严格 JSON 校验；未知字段、错误类型均拒绝。
+MCP客户端使用stdio；Python与扩展使用回环WebSocket text消息，每帧一个UTF8 JSON对象，图片编码在成功Result中，不使用二进制帧。默认127.0.0.1:8765，--host/--port > ASEPRITE_MCP_HOST/PORT > 默认；localhost规范化IPv4回环，另支持::1，端口1–65535，端口0/非回环明确拒绝。
 
-P0 当时没有 WebSocket listener、Lua 扩展或真实实时编辑后端；P1 已真实实现连接、文档/事务及图片。P1 在 `create_server` 生命周期把实际连接的 Backend 绑定同一个 Executor；禁止另起无法被工具访问的 Executor。实时工具已接通；没有编辑器时返回 `NOT_CONNECTED`，状态工具返回 `connected: false`。P0 对实时修订、断连及超时仅模拟错误契约，真实实现和验证在 P1。
+扩展直接连接配置地址，不创建/读取连接JSON、运行目录、token、配对文件；旧CONNECTION_FILE/RUNTIME_DIR环境不读取。设置无选文件入口。仅允许无Origin或目标原生ws://Origin，普通http/https/nullOrigin在HTTP握手拒绝403。没有共享密钥认证，来源限制、版本检查均不证明本机程序身份；用户启用扩展表示允许该本机端点实时编辑，可Disconnect停用。
 
-## 传输、握手与对象
+hello：`{type:"hello",protocol_version:1,session_id,aseprite_version,api_version,extension_version?,capabilities}`。标识非空且最长128字符；版本字段严格类型。protocol不等于1或提供的extension_version不等于服务版本为VERSION_MISMATCH，api<28为UNSUPPORTED_CAPABILITY。未知能力忽略，协商取核心能力交集。旧hello含token等多余字段拒绝INVALID_REQUEST；不悄悄跳过旧认证。
 
-MCP 使用 stdio；内部消息每个 WebSocket text frame 对应一个 UTF-8 JSON 对象，不使用 JSON-RPC 或二进制图片帧。内部监听只允许 `127.0.0.1` / `::1`，默认端口 8765（0.2.0 起，CLI 可覆盖；port=0 为旧兼容入口）；每次启动 `RuntimeConfig` 产生 32 随机字节的 token，不写入日志/来源文件。P1 提供本机配置入口给扩展，不把示例 token 用于真实启动。
+welcome：`{type:"welcome",protocol_version:1,session_id,capabilities,limits}`。握手失败发送Result（request_id=null）后关闭。第二个活动编辑器拒绝SESSION_MISMATCH；每个socket OPEN新会话，断开清实时注册与缓存，旧文档/图层ID不复用。negotiate(hello)、Executor.attach_live(backend,hello)不接收token。
 
-扩展先发 `Handshake`：`type: hello`、`protocol_version: 1`、`token`、新 `session_id`、`aseprite_version`、`api_version`、`capabilities`。`negotiate` 比较 token、拒绝版本不符或 API < 28，返回与核心能力的交集。扩展仍需实际探测 API，版本号不证明每项能力可用。
+传输保活：扩展Timer每秒发`{"type":"ping"}`，服务回`{"type":"pong"}`，均不作为业务请求或去重回执；5秒无回应或socket CLOSE/ERROR释放旧socket，由下一Timer tick重新连接。等待OPEN也受此期限；手动停止关闭Timer/socket，自动恢复需在设置中启用。保活不重发业务修改、不将未知结果变成功。
 
-服务器回 `Welcome`：`type: welcome`、协议版本、原 session_id、已协商能力及完整 Limits 默认值。握手失败返回统一 Result 错误（`request_id: null`）并关闭；P1 负责线上的收发和握手超时。第二个活动会话明确拒绝。重连创建新会话，旧文档/图层标识一律失效。
+状态工具返回connected/session_id/service_version/extension_version/protocol_version/capabilities/aseprite_version/api_version/url，以及`connection_mode:"direct"`、`authentication:"none"`；没有connection_file或automatic_discovery。
 
-实时文档/图层标识是扩展分配的不透明字符串，最大 128 字符，不使用名称或新版持久 UUID。文档关闭、图层删除即失效，重名/改名不改变标识。文档内容 `revision` 从 0 单调递增，人工编辑、撤销、重做都更新；活动文档/帧/图层/选区变更更新单独的 `context_revision`，标识不能因用户切换活动文档而重定向。具体事件监听由 P1 实现。
+## 目标、修订和公共入口
 
-CLI `target` 是 `{backend: cli, path: 绝对磁盘文件路径}`。CLI 不接受实时修订和上下文。图层 `id` 是本次磁盘树的 1 起始索引路径，如 `1`、`2/1`；只用于这一文件结构，不保证外部结构编辑后仍有效。实时标识不能用于 CLI。CLI 读入和提交之间检测源文件 SHA-256 变化并拒绝覆盖；这不提供对外部编辑器的文件锁，文件检查与原子替换之间仍有短竞态窗口。
+Backend提供`capabilities:frozenset[str]`及`async execute(Request)->Result`，公共执行入口`Executor.execute(JSON str/bytes)->Result`。协议层不导入后端。实时断线禁止静默转CLI。
 
-## 请求、结果与错误
+live目标`{backend:"live",session_id,document_id?}`；list/create不能带document_id，其余文档动作必须明确指定。标识为会话注册的不透明字符串，不使用名称唯一或依赖新版UUID；删除图层、关闭文档即失效。revision为内容事件计数，人工编辑/撤销/重做/回滚也可能推进；context_revision独立跟踪活动图层/帧/选区/命令。不能假定每个批次revision只+1。
 
-Request：`protocol_version` 默认 1；`request_id` 必填；`target` 必填；`action` 为按 `name` 区分的联合类型；可选 `expected_revision` / `expected_context` 为非负整数。
+cli目标`{backend:"cli",path:绝对磁盘路径}`；仅支持info/apply，不接受实时修订或上下文。图层id为本次磁盘树1起始索引路径，如1、2/1，不保证外部改结构后有效，不能用实时id代替。
 
-| action.name | 参数与目标 |
+Request字段：protocol_version默认1，request_id必填，target必填，action按name区分严格联合；expected_revision/expected_context可选非负整数；expected_file_revision可选64位小写SHA256，仅CLI。
+
+| action.name | 参数和语义 |
 |---|---|
-| list_documents | live 会话目标，不带 document_id |
-| create_sprite | live 会话目标；width、height > 0；RGB，不保存 |
-| get_document_info | live 文档目标，或 CLI 文件目标 |
-| apply_operations | live 文档或 CLI 文件目标；operations 非空 |
-| get_preview | live 文档；frame 默认 1、scale 默认 1（1–64）；可选 region `{x,y,width,height}` |
-| save_sprite | live 文档；path 可省略（未命名文档必须提供），overwrite 默认 false |
-| undo / redo | live 文档；执行最新历史动作 |
+| list_documents | live会话，无document_id；返回documents及active_document_id |
+| create_sprite | live会话，width/height>0；RGB未保存文档 |
+| get_document_info | live文档或CLI文件；返回当前信息/修订 |
+| apply_operations | live文档或CLI文件，operations非空；live须expected_revision |
+| get_preview | live文档，expected_revision，frame默认1，scale整数1–64，可选region{x,y,width,height} |
+| save_sprite | live文档，expected_revision，path可省略（未命名需给绝对路径），overwrite默认false |
+| undo/redo | live文档，expected_revision；作用于最新历史，可能包括人工编辑 |
 
-除 list/create 外，live 请求必须带 document_id；编辑、预览、保存、撤销/重做必须带 expected_revision。元数据读取返回当前修订；内容操作执行前由后端再次检查修订。expected_context 可选，若提供，依赖的活动状态不符必须拒绝。CLI 适配器只支持 info/apply，其余返回能力不支持。
+编辑、预览、保存、历史在实际执行前再核对修订，expected_context若提供也必须匹配；可显式定位原文档的动作不因活动文档切换而漂移。CLI info/apply成功data.file_revision返回摘要，后续编辑应携带expected_file_revision；不传保持老调用，但只检查执行期间变化。最终摘要比较与替换仍有外部进程短竞态，不能同时用CLI写编辑器正在保存的同一文件。
 
-Result：`protocol_version`、`request_id`（畸形请求可为 null）、`ok`、实际 `target`、`revision`、`context_revision`、`data`、`error`。成功不带 error；失败必须带 `{code,message}` 且不带成功 data。请求/响应 id 或目标不匹配视为 RESULT_UNKNOWN。未取得目标当前修订时 revision 为 null，不伪造 0。
+<a id="p2-m1-故障与兼容补充"></a>
+## 结果与错误
 
-info 的 data 提供 width、height、color_mode、frames 数量、layers（id/name/is_group/opacity/visible）、aseprite_version 和 api_version；实时实现还需提供 document_id、active、saved、path、帧时长及上下文信息。list 的 data 为 documents 列表及 active_document_id；create 为新 document_id 与基本信息；apply 为 layer_refs 映射及变更统计；save 为实际 path；undo/redo 为 applied 与实际修订。实时字段的填充在 P1 验证，不能用 CLI 结果冒充实时对象。
+Result：protocol_version、request_id（坏请求可null）、ok、target、revision、context_revision、data、error。成功无error，失败必须error{code,message}且data=null；未知当前修订用null，不伪造0。后端回执ID/目标不匹配为RESULT_UNKNOWN。MCP失败同时isError=true和JSON Result；ContractServer解包SDK1.6.0额外文本前缀，参数校验错误映射INVALID_REQUEST。
 
 | 错误码 | 含义 |
 |---|---|
-| INVALID_REQUEST / LIMIT_EXCEEDED | 格式、取值、越界 / 上限 |
-| VERSION_MISMATCH / SESSION_MISMATCH | 协议不兼容 / token、旧会话或第二连接 |
-| NOT_CONNECTED | 没有编辑器连接，禁止回退磁盘 |
-| INVALID_TARGET | 文档/图层/帧失效、CLI 文件不存在或非绝对路径 |
-| REVISION_CONFLICT / CONTEXT_CONFLICT | 内容修订 / 活动上下文或磁盘文件发生变化 |
-| UNSUPPORTED_CAPABILITY | 协商未支持、CLI 未实现、非普通 RGB 绘制目标 |
-| EXECUTION_FAILED | 明确执行失败、Lua 异常、缺少回执或本次产物 |
-| TIMEOUT | CLI 被终止，或实时只读请求超时 |
-| RESULT_UNKNOWN | 实时变更超时/断连/无匹配确认，可能已经发生 |
-| REQUEST_CONFLICT | 同一 request_id 携带不同请求 |
+| INVALID_REQUEST / LIMIT_EXCEEDED | 参数/取值/越界错误或消息/队列/批次预算超限 |
+| VERSION_MISMATCH | 协议或提供的扩展版本不匹配 |
+| SESSION_MISMATCH / NOT_CONNECTED | 旧会话或第二活动编辑器 / 未连接 |
+| INVALID_TARGET | 内存对象失效，磁盘路径不存在或不是绝对路径 |
+| REVISION_CONFLICT / CONTEXT_CONFLICT | 文档内容/活动上下文或磁盘文件变化 |
+| UNSUPPORTED_CAPABILITY | 协商不支持、非普通可编辑RGB图层或CLI不支持动作 |
+| EXECUTION_FAILED | Lua/OS/解码失败、非零退出、缺少nonce回执/新产物 |
+| TIMEOUT | 排队未发送、实时只读超时或CLI超时进程已终止 |
+| RESULT_UNKNOWN | 实时写入发送后断线/超时/没有匹配确认，可能已经发生 |
+| REQUEST_CONFLICT | 相同request_id携带不同内容 |
 
-公共执行错误和新增 MCP 核心/cli_execute 工具使用结构化错误，MCP 通过 ToolError 转成 `isError: true`。为保留上游调用兼容，115 个旧 CLI 工具成功时保留原来的文本结果，常见 Failed/ERROR/Invalid/Script failed 失败转为结构化 MCP isError；它们尚未全部迁移到公共执行层，不承诺具备新适配器的回执/原子提交保证，P3 按清单迁移。
+info返回尺寸、color_mode、frames、layers、软件/API版本；实时另有document_id、saved/path/modified、active、帧时长、活动帧/图层、selection{empty,x,y,width,height}和修订。create返回新文档信息；apply返回operations和可选layer_refs；save返回实际path；undo/redo返回applied（无事件时false）和修订。PNG结果见后文。
 
-## 批次、坐标和传参
+## 批次、历史与保存
 
-坐标从 (0,0) 起，画布坐标，帧从 1 起，RGBA 必须显式给四个 0–255 整数。新图层默认普通图层/不透明度 255；设置 opacity 也是 0–255。
+坐标为画布坐标、帧1起始，RGBA四个0–255整数。layer引用为`{kind:"id"或"ref",value}`，默认id；ref只能引用同批前序create_layer，不能重复或前向引用。
 
-- create_layer：`{op, ref, name}`；ref 在批次内唯一。
-- set_opacity：`{op, layer, opacity}`。
-- pixel：`{op, layer, frame=1, x, y, rgba}`。
-- rectangle：pixel 字段加 `width,height,filled=true`。
+- create_layer：op/ref/name，新建普通图层。
+- set_opacity：op/layer/opacity，0–255。
+- pixel：op/layer/frame默认1/x/y/rgba。
+- rectangle：pixel加width/height/filled默认true，描边也按矩形面积保守预算。
 
-layer 结构为 `{kind: id（默认）或 ref, value: 标识}`。ref 只能指向本批先前的 create_layer；不得前向引用或重复定义。真实图层 id 在成功 data.layer_refs 返回。完整批次先校验再事务执行；越界拒绝，不裁剪、不自动拆批。描边矩形也按整个矩形面积保守计算像素预算。
+完整批次先校验，真实app.transaction内用Cel图像副本赋回支持撤销，任一支持操作失败整批回滚，一个成功批次一次撤销。累计绘制面积、逐次Cel副本面积和CPU预算；超限拒绝/回滚，不拆批。保存/导出/网络/任意Lua不进入批次。临时切换活动目标后恢复可恢复上下文。
 
-CLI `cli.lua` 是固定脚本，参数写入 UTF-8 JSON 文件，经 `--script-param` 传路径，由 `json.decode` 加载，无新增 Lua 参数字符串插值。目标为 RGB 可编辑普通图层；索引/灰度、组、参考、Tilemap、背景、锁定目标拒绝。图像在副本上修改后赋回 cel.image，处理 Cel 偏移与空 Cel；先存入唯一临时 .aseprite 产物，Python 核对随机 nonce 回执、数据、格式头和源文件摘要后原子替换。退出 0、旧输出存在或仅有 stdout 均不能证明成功。临时目录在成功/失败后清理。
+保存仅原生.aseprite/.ase绝对路径，未命名必须给path，存在的目标（包括原路径）须overwrite=true。不隐式保存；图片导出和CLI磁盘操作不搬入实时编辑。索引/灰度、参考/Tilemap/背景/锁定或祖先锁定图层编辑拒绝。
 
-实时事务不能照搬 CLI saveAs；一个成功编辑批次一次撤销，保存独立。协议不允许任意 Lua 或外部副作用进入批次。CLI 工具在受控线程运行，subprocess.run 带超时并清理本次子进程，不阻塞 MCP 事件循环。
+CLI固定Lua从临时业务参数JSON加载（不是连接配置），产物先存同卷临时文件，匹配nonce、回执字段、格式头/文件摘要再os.replace。退出0或旧文件存在不证明成功。CLI及旧MCP工具在线程执行共享路径锁，超时清理本次进程/临时资源；Windows输出捕获bytes再严格UTF8解码，非零退出保留证据。旧高级工具参数/成功文本保留，常见失败转JSON/isError，但尚未迁移全部事务/回执契约，P3按清单处理。
 
-## PNG 传输
+## PNG内容
 
-get_preview 的成功 data 包含 `png: PngPayload`：mime_type 固定 image/png，encoding 固定 base64，data 为无 data-URI 前缀的 base64，width/height 为输出图片尺寸，frame、scale、可选 region 为源画布区域。外层 Result 关联目标和实际 revision。PngPayload.decode 检查体积、PNG 内容和尺寸，禁止返回本地路径替代图片。
+get_preview成功data.png为`{mime_type:"image/png",encoding:"base64",data,width,height,frame,scale,region}`。region为实际源画布区域，width/height为缩放输出。独立RGB Image.drawSprite合成，内存PNG使用存储型deflate/CRC32/Adler32，整数最近邻；先估算字节/像素再分配，编码后复核。Python验证base64/PNG/尺寸与预算。
 
-P1-M3 已校验 PNG 并包装为 MCP ImageContent，文字元数据与图片一起返回，文字中不重复 base64。scale 为整数最近邻，region 全部在画布内；完整画布或缩放后像素超限时后端必须拒绝。读取/预览不得修改源文档、活动上下文或历史。
+MCP返回TextContent（Result元数据，png去掉data）和ImageContent(image/png)，文字不重复base64；不能以本地路径代替图像。预览不修改源文档、活动上下文或历史，不产生磁盘中间文件。收到ImageContent与客户端实际显示需分别验收。
 
-## 上限和去重
+## 上限、取消与去重
 
-均可用 `ASEPRITE_MCP_` 加大写字段名配置，严格正值；实例在启动时固定。默认是小批像素编辑的保守起点，没有宣称性能调优结果，P2 依据真实耗时调整。
+Limits启动时固定，环境名ASEPRITE_MCP_加大写字段名，全部正值：
 
-| Limits 字段 | 默认 | 依据 |
-|---|---|---|
-| max_message_bytes | 8 MiB | 容纳 4 MiB PNG 的 base64 与元数据，限制单消息内存 |
-| max_operations | 256 | 限制 UI 一次事务工作量 |
-| max_pixels | 262144（512×512） | 单批绘制、画布创建与预览输出预算 |
-| max_png_bytes | 4 MiB | 限制编码图像传输体积 |
-| max_batch_seconds | 0.25 | 实时原子事务 CPU 预算，超出时整批回滚 |
-| timeout_seconds | 30 | 防止 CLI 挂起；不表示编辑 30 秒可接受 |
-| dedup_entries | 256 | 限制会话结果缓存数量 |
-| dedup_ttl_seconds | 120 | 提供短期确认重试窗口 |
+| 字段 | 默认 |
+|---|---|
+| max_message_bytes | 8MiB |
+| max_operations | 256 |
+| max_pixels | 262144（绘制/累计图像副本/创建/预览输出） |
+| max_png_bytes | 4MiB |
+| max_batch_seconds | 0.25秒实时事务CPU预算 |
+| timeout_seconds | 30秒 |
+| dedup_entries | 256（也限制不同ID在途队列） |
+| dedup_ttl_seconds | 120秒 |
 
-Executor 按实时会话或规范化磁盘路径串行执行，缓存相同 ID/相同请求的最终结果（包括已确认失败和结果未知），同 ID 不同内容拒绝。在 TTL 内且未被容量淘汰时返回缓存，不重复操作；断开仅清实时缓存，新会话不复用旧 id；磁盘回执不受编辑器重连影响。TTL/淘汰后的请求没有去重保证，因此 RESULT_UNKNOWN 后必须先刷新文档状态，不盲目重发。核心变更 MCP 工具可显式传 request_id；省略时服务器生成 UUID。WebSocket 传输重试必须保留同一 id，不能重新生成。P1 扩展也需有对应去重与最终结果确认，Python 缓存不能替代真实编辑端防重。
-
-## P1-M2 结果细化
-
-实时 info/list 字段已实现；selection 为 bounds 与 empty，active_frame 从 1 起。revision 是内容事件计数，回滚也可能推进，不能当作批次数；context_revision 独立。apply 无新图层时可省略 layer_refs；undo/redo applied=false 表示没有收到历史变更事件。save 仅原生 .aseprite/.ase 绝对路径，存在目标无论是否原路径都需 overwrite=true；不能用保存工具隐式导出图片。
-
-## P1-M3 图片实现
-
-扩展按 v1 data.png 发送 base64；MCP 层返回 TextContent(Result 元数据、png 去掉 data 字段) 与 ImageContent(image/png) 两块。PNG region 填实际区域，完整画布也显式给出原点/尺寸。Lua 内存编码采用存储型 deflate，事先以行字节数和块开销估算体积；消息预留 2048 字节元数据开销，因此很小的自定义消息上限可能提前拒绝。无需临时文件，不改变文档、上下文或历史。
-
-## P2-M1 故障与兼容补充
-
-协议版本仍为 1；新增可选 `expected_file_revision`（64 位小写 SHA-256，仅 CLI）。CLI info/apply 成功 data 新增 `file_revision`，调用方应在下一次修改中回传；不传时保持旧调用兼容，但只检查执行期间变化。外部写入无跨进程强制锁，最终比较与替换之间仍有短竞态；编辑器正在编辑的文件不要同时交给 CLI。旧工具未迁移摘要/nonce 事务契约，需独占目标文件；高级迁移在 P3。
-
-已接收任务不因 MCP 调用方取消而取消；相同 ID 在执行中合并等待，内容冲突立即拒绝。排队超时为 TIMEOUT，明确未发送；实时写入发送后的超时/断线为 RESULT_UNKNOWN。迟到或重复回执不重新执行，不把未知结果改写成成功。当前会话内缓存仍受 120 秒/256 条限制，过期、淘汰或重连后不得依赖旧 ID 重发。请求队列最多 256 个不同 ID；满时 LIMIT_EXCEEDED。重连后排队旧请求失败，旧会话完成结果不写入新会话缓存。
-
-CLI 及旧工具的 MCP 路径在线程运行，共享规范化磁盘路径锁；锁等待有期限，CLI 自己的 subprocess.run 终止并等待超时进程。Windows 输出先捕获 bytes 再严格 UTF-8 解码，避免读取线程异常被误判成功。非零退出保留返回码与 stderr/stdout；原始 Lua/旧工具仍保留兼容限制。直接导入旧 Python 函数不经过 MCP worker 包装。
-
-实时批次除绘制面积外累计计算每次 Cel 图像副本的面积（包括扩张和前序操作）；超过 max_pixels 在提交前拒绝。事务逐操作检查 CPU 预算，超出后回滚；不拆成多个提交。默认 max_batch_seconds=0.25，旧扩展不实现该保护，应配套升级服务与扩展。小请求不等待其他磁盘文件，实时 UI 上的大预览仍会短暂占用主线程。仅记录 backend、排队/执行耗时到 stderr，不记录 token、请求参数或 PNG。
-
-发现文件默认使用 PID + 随机 UUID，避免强杀残留与 PID 重用冲突；不自动删除无法确认归属的固定路径文件。文件已存在、端口占用均明确启动失败，不降级 CLI。
-
-## P2-M2 版本与 SDK 错误边界
-
-发布包 0.1.0/协议 v1。hello 新增可选 extension_version；提供版本且不等于服务版本时 VERSION_MISMATCH，旧开发扩展不提供时兼容但状态显示 null，应升级配套包。状态返回 service_version 与 extension_version，实际包版本由构建器同时核对 Python 常量、pyproject、Lua 与扩展清单。
-
-MCP SDK 1.6.0 在工具异常外加 Error executing tool 前缀。ContractServer 仅在此兼容边界解包异常链中的严格 Result，保证失败 TextContent 本身是可 JSON 解码的 Result，同时保持 isError=true；参数校验失败为 INVALID_REQUEST。成功内容与工具签名不变，SDK 升级须复测该边界。
-
-## P2-M3 自动发现与配置
-
-协议 v1 的业务请求/握手语义保持，服务与扩展配套版本 0.2.0。默认 host=127.0.0.1、port=8765；CLI --host/--port > ASEPRITE_MCP_HOST/PORT > 默认，localhost 规范化为 IPv4 回环，仅允许回环地址。状态新增 automatic_discovery，默认 true，显式 CONNECTION_FILE 或 port=0 时为 false。
-
-默认发现目录和路径见架构 P2-M3；服务独占端点后原子发布 url/token，退出仅清理匹配本次 token 的文件，强杀残留由同端点下一次启动替换。扩展轮询有 4096 字节读取上限和地址匹配验证，token 不写入偏好/日志；服务重启凭据变化建立新会话，旧目标/请求失效。用户关闭自动连接时停止定时器和连接，勾选后恢复；关闭/重载清理自有资源。无需用户获取/选择发现文件。
-
-port=0 和显式旧 CONNECTION_FILE 仍使用旧兼容规则（独占创建/手选 Legacy JSON）；它们禁用默认自动发现。自定义运行目录需同时传给两侧进程；仅设置客户端子进程环境不会影响已运行编辑器。端口冲突启动失败，不能静默切换目标或 CLI。
+Executor按实时会话/规范化磁盘路径独立排队。调用方取消只取消等待，已接收任务由shield保护直到确认，执行中同ID合并，不同内容立即拒绝；排队超时明确未发送。缓存最终结果（含失败和结果未知），同ID同内容在TTL内且未淘汰时直接返回，扩展也保留会话去重。断开清实时缓存，不清CLI回执；旧会话完成不污染新缓存。TTL/容量/重连后无去重保证，RESULT_UNKNOWN必须先读状态再决定，不换ID盲重发。迟到回执丢弃，不自动undo或重试修改。

@@ -18,7 +18,7 @@ async def until(predicate, timeout=15):
 
 
 @asynccontextmanager
-async def editor_process(directory, connection_file, *, automatic=False):
+async def editor_process(directory):
     user = directory / "user"
     extension = user / "extensions" / "aseprite-mcp-live"
     shutil.copytree(ROOT / "extension", extension)
@@ -42,11 +42,6 @@ _G.test_timer=Timer{interval=0.04,ontick=function()
   local out=assert(io.open(app.params.response,"wb"));out:write(json.encode(result));out:close()
 end}
 test_timer:start()
-'''
-    if not automatic:
-        boot_source+='''
-local f=assert(io.open(app.params.connection,"rb")); local config=json.decode(f:read("*a")); f:close()
-bridge:connect(config)
 '''
     boot.write_text(boot_source, encoding="utf-8")
     permissions = []
@@ -78,10 +73,7 @@ bridge:connect(config)
         return result.get("data")
 
     with (directory / "aseprite.log").open("w") as log:
-        args = [os.environ["ASEPRITE_PATH"]]
-        if not automatic:
-            args.extend(["--script-param", f"connection={connection_file}"])
-        process = subprocess.Popen([*args, "--script-param", f"control={control}",
+        process = subprocess.Popen([os.environ["ASEPRITE_PATH"], "--script-param", f"control={control}",
             "--script-param", f"response={response}", "--script", str(boot)],
             env=dict(os.environ, ASEPRITE_USER_FOLDER=str(user)), startupinfo=startup,
             stdout=log, stderr=log)

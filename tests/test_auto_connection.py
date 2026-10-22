@@ -1,4 +1,4 @@
-"""Configuration/atomic discovery contracts and separately marked real UI auto-connect."""
+"""Direct endpoint contracts and separately marked file-free real UI connection."""
 import asyncio
 import json
 import os
@@ -10,9 +10,10 @@ from websockets.asyncio.client import connect
 
 from aseprite_mcp.__main__ import main
 from aseprite_mcp.backends.live import LiveBridge
-from aseprite_mcp.core.config import DEFAULT_PORT, RuntimeConfig, discovery_file
+from aseprite_mcp.core.config import DEFAULT_PORT, RuntimeConfig
 from aseprite_mcp.core.execution import Executor
 from aseprite_mcp.core.protocol import Handshake
+from websockets.exceptions import InvalidStatus
 from conftest import run
 from live_support import editor_process, until
 
@@ -35,50 +36,50 @@ def test_cli_overrides_env_and_defaults(monkeypatch):
     monkeypatch.setattr(entry, "create_server", create)
     main(["--host", "localhost", "--port", "8767"])
     assert (captured[0].host, captured[0].port) == ("127.0.0.1", 8767)
-    for args in [["--host", "0.0.0.0"], ["--port", "-1"], ["--port", "65536"], ["--port", "bad"], ["--prot", "8765"]]:
+    for args in [["--host", "0.0.0.0"], ["--port", "0"], ["--port", "-1"], ["--port", "65536"], ["--port", "bad"], ["--prot", "8765"]]:
         with pytest.raises(SystemExit) as error:
             main(args)
         assert error.value.code == 2
 
 
-def test_atomic_discovery_restart_collision_and_authentication(tmp_path, monkeypatch):
-    monkeypatch.delenv("ASEPRITE_MCP_CONNECTION_FILE", raising=False)
+def test_direct_connection_without_file_access(tmp_path, monkeypatch):
+    # Obsolete variables point at an impossible directory: neither side needs it.
+    forbidden = tmp_path / "not-a-directory"
+    forbidden.write_text("leave this untouched", encoding="utf-8")
+    monkeypatch.setenv("ASEPRITE_MCP_CONNECTION_FILE", str(forbidden / "connection.json"))
+    monkeypatch.setenv("ASEPRITE_MCP_RUNTIME_DIR", str(forbidden))
     async def scenario():
-        path = discovery_file("127.0.0.1", DEFAULT_PORT)
-        path.parent.mkdir()
-        path.write_text("stale truncated old process file", encoding="utf-8")
-        bridge = LiveBridge(Executor(None), RuntimeConfig())
+        executor = Executor(None)
+        bridge = LiveBridge(executor, RuntimeConfig())
         async with bridge.lifespan():
-            first = json.loads(path.read_text(encoding="utf-8"))
-            assert first["url"] == "ws://127.0.0.1:8765"
-            assert bridge.status()["automatic_discovery"]
-            assert "token" not in bridge.status()
-            before = path.read_bytes()
-            with pytest.raises(OSError, match="choose another --port"):
-                async with LiveBridge(Executor(None), RuntimeConfig()).lifespan():
-                    pytest.fail("Occupied fixed port must not fall back")
-            assert path.read_bytes() == before
+            assert bridge.status()["connection_mode"] == "direct"
+            assert bridge.status()["authentication"] == "none"
+            assert "connection_file" not in bridge.status()
             async with connect(bridge.url) as ws:
-                await ws.send(Handshake(protocol_version=1, token="wrong", session_id="s",
-                    aseprite_version="1.3.7", api_version=28, capabilities=[]).model_dump_json())
-                assert json.loads(await ws.recv())["error"]["code"] == "SESSION_MISMATCH"
-        assert not path.exists()
-        restarted = LiveBridge(Executor(None), RuntimeConfig())
-        async with restarted.lifespan():
-            assert restarted.connection_file == path
-            assert json.loads(path.read_text())["token"] != first["token"]
-            assert not list(path.parent.glob(".connection-*"))
+                await ws.send(Handshake(protocol_version=1, session_id="s", aseprite_version="1.3.7",
+                    api_version=28, capabilities=[]).model_dump_json())
+                assert json.loads(await ws.recv())["type"] == "welcome"
+        assert forbidden.read_text(encoding="utf-8") == "leave this untouched"
+        assert list(tmp_path.iterdir()) == [forbidden]
     run(scenario())
 
 
-def test_automatic_paths_and_ephemeral_legacy_mode(monkeypatch):
-    monkeypatch.delenv("ASEPRITE_MCP_CONNECTION_FILE", raising=False)
-    assert discovery_file("::1", 8766).name == "connection-__1-8766.json"
-    assert discovery_file("127.0.0.1", 8766) != discovery_file("127.0.0.1", 8765)
-    assert not LiveBridge(Executor(None), RuntimeConfig(port=0)).automatic_discovery
-    monkeypatch.setenv("ASEPRITE_MCP_RUNTIME_DIR", "relative")
-    with pytest.raises(ValueError, match="absolute"):
-        discovery_file("127.0.0.1", 8765)
+def test_browser_origin_rejected_native_loopback_allowed():
+    async def scenario():
+        bridge = LiveBridge(Executor(None), RuntimeConfig())
+        async with bridge.lifespan():
+            for origin in ("https://example.com", "http://localhost", "null"):
+                with pytest.raises(InvalidStatus) as error:
+                    async with connect(bridge.url, origin=origin):
+                        pytest.fail("Browser connections must be rejected")
+                assert error.value.response.status_code == 403
+            for origin in (None, bridge.url):
+                async with connect(bridge.url, origin=origin) as ws:
+                    await ws.send(Handshake(protocol_version=1, session_id="native", aseprite_version="1.3.7",
+                        api_version=28, capabilities=[]).model_dump_json())
+                    assert json.loads(await ws.recv())["type"] == "welcome"
+                await until(lambda: bridge.executor.live is None)
+    run(scenario())
 
 
 def test_stdio_cli_endpoint_precedence(tmp_path):
@@ -87,18 +88,15 @@ def test_stdio_cli_endpoint_precedence(tmp_path):
     import gc
     async def scenario():
         env = dict(os.environ, ASEPRITE_MCP_PORT="1", ASEPRITE_MCP_HOST="::1", ASEPRITE_MCP_TOOL_PROFILE="core")
-        env.pop("ASEPRITE_MCP_CONNECTION_FILE", None)
         params = StdioServerParameters(command=sys.executable,
             args=["-m", "aseprite_mcp", "--host", "localhost", "--port", "8767"], env=env)
         async with stdio_client(params) as streams, ClientSession(*streams) as client:
             await client.initialize()
             status = json.loads((await client.call_tool("get_connection_status", {})).content[0].text)
             assert status["url"] == "ws://127.0.0.1:8767"
-            assert status["automatic_discovery"] and not status["connected"]
+            assert status["connection_mode"] == "direct" and not status["connected"]
         gc.collect()
         await asyncio.sleep(.05)
-        # SDK force-kills its own child; the next startup replaces this receipt.
-        discovery_file("127.0.0.1", 8767).unlink(missing_ok=True)
     run(scenario())
 
 
@@ -107,7 +105,6 @@ def test_real_stdio_force_kill_restart_without_selecting_file(tmp_path, monkeypa
     from mcp import ClientSession, StdioServerParameters
     from mcp.client.stdio import stdio_client
     import gc
-    monkeypatch.delenv("ASEPRITE_MCP_CONNECTION_FILE", raising=False)
     async def scenario():
         env = dict(os.environ, ASEPRITE_MCP_TOOL_PROFILE="core", ASEPRITE_MCP_HOST="127.0.0.1", ASEPRITE_MCP_PORT="8765")
         params = StdioServerParameters(command=sys.executable, args=["-m", "aseprite_mcp"], env=env)
@@ -118,7 +115,7 @@ def test_real_stdio_force_kill_restart_without_selecting_file(tmp_path, monkeypa
                     if status["connected"]:
                         return status
                     await asyncio.sleep(.05)
-        async with editor_process(tmp_path, None, automatic=True) as manual:
+        async with editor_process(tmp_path) as manual:
             async with stdio_client(params) as streams, ClientSession(*streams) as client:
                 await client.initialize()
                 first = await connected(client)
@@ -137,18 +134,35 @@ def test_real_stdio_force_kill_restart_without_selecting_file(tmp_path, monkeypa
             gc.collect()
             await asyncio.sleep(.1)
             await manual('__aseprite_mcp_live:disconnect();return true')
-        discovery_file("127.0.0.1", 8765).unlink(missing_ok=True)
     run(scenario())
 
 
 @pytest.mark.real
 def test_real_editor_automatic_start_restart_stop_and_custom_port(tmp_path, monkeypatch):
-    monkeypatch.delenv("ASEPRITE_MCP_CONNECTION_FILE", raising=False)
     async def scenario():
+        forbidden = tmp_path / "blocked-discovery-root"
+        forbidden.write_text("not a directory", encoding="utf-8")
+        monkeypatch.setenv("ASEPRITE_MCP_RUNTIME_DIR", str(forbidden))
+        monkeypatch.setenv("ASEPRITE_MCP_CONNECTION_FILE", str(forbidden / "connection.json"))
         executor = Executor(None)
         first = LiveBridge(executor, RuntimeConfig())
         # Start the editor before any service. No config file or connect() call.
-        async with editor_process(tmp_path, None, automatic=True) as manual:
+        async with editor_process(tmp_path) as manual:
+            # Give only production bridge.lua a filesystem-denying environment.
+            # Control files for manual GUI actions remain available to the fixture.
+            await manual('''
+local b=__aseprite_mcp_live
+local function blocked() error("Production connection must not open files") end
+local env=setmetatable({io=setmetatable({open=blocked},{__index=io})},{__index=_G})
+local found=false
+for index=1,20 do
+  local name=debug.getupvalue(b.start_auto,index)
+  if not name then break end
+  if name=="_ENV" then debug.setupvalue(b.start_auto,index,env);found=true;break end
+end
+assert(found,"Expected production Lua module environment")
+return true
+''')
             state = await manual('return {ready=__aseprite_mcp_live.ready or false,timer=__aseprite_mcp_live.auto_timer~=nil}')
             assert state == {"ready": False, "timer": True}
             async with first.lifespan():
@@ -157,10 +171,10 @@ def test_real_editor_automatic_start_restart_stop_and_custom_port(tmp_path, monk
                 raw = json.dumps({"request_id": "auto-created", "target": {"backend": "live", "session_id": session},
                     "action": {"name": "create_sprite", "width": 8, "height": 8}})
                 assert (await executor.execute(raw)).ok
-                # Open both settings dialogs to exercise API 28 widget bindings.
-                assert await manual('__aseprite_mcp_live:settings();__aseprite_mcp_live.dialog:close();return true')
+                # Exercise the only settings dialog; there is no file selector.
+                assert await manual('__aseprite_mcp_live:settings();__aseprite_mcp_live.dialog:close();return __aseprite_mcp_live.legacy_settings==nil')
             assert executor.live is None
-            # Server restart rotates the credential; the editor follows it automatically.
+            # Server restart keeps the endpoint; the editor reconnects without reading files.
             second = LiveBridge(executor, RuntimeConfig())
             async with second.lifespan():
                 await until(lambda: executor.session_id not in (None, session))
