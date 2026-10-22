@@ -1,6 +1,6 @@
 # 动态项目结构
 
-最近复核：2026-10-22，PACK-M3 干净检出 CI 临时目录修复。结构说明唯一来源；实际与规划分开。
+最近复核：2026-10-22，DOCS-M3 英文 README 同步。结构说明唯一来源；实际与规划分开。
 
 ## 实际结构
 
@@ -10,7 +10,6 @@ aseprite-mcp/
 ├─ Aseprite/                 本地软件与个人数据，忽略、不分发
 ├─ .work/                    隔离 Python/安装环境、验收日志/XML、P1/P2 图片、release 候选和清理记录，忽略
 ├─ .venv/                    uv 项目环境，忽略
-├─ 根目录早期测试画布/图像    以 .gitignore 精确规则忽略，保留本地文件
 ├─ .github/workflows/check.yml Windows 契约/文档/打包 CI，测试前创建 .work，无 GUI 或自动发布步骤
 ├─ scripts/
 │  ├─ build_release.py      uv 构建、确定性扩展 ZIP、生产依赖及分发清单校验
@@ -67,7 +66,9 @@ aseprite-mcp/
 ├─ .env.example              ASEPRITE_PATH、工具配置及全部上限示例
 ├─ .gitignore                软件、个人配置、缓存与产物隔离
 ├─ LICENSE                   原始上游 MIT 声明
-├─ README.md                 使用者入口
+├─ README.md                 中文使用者入口，Windows uv、PyPI uvx/本地构建、Release 扩展与配置；不引用内部文档
+├─ README.en.md              英文使用者入口，与中文版互链并纳入源码包
+├─ assets/                   用户提供的 step1.png～step5.png 安装与连接截图，两版 README 共用
 ├─ CONTRIBUTING.md           贡献入口
 ├─ AGENTS.md                 协作规则
 ├─ EXECUTION_PLAN.md          执行与状态入口
@@ -90,7 +91,7 @@ aseprite-mcp/
    │  │                      可由契约测试校验的握手/请求/结果样例
    │  ├─ MODULE_REPORT_TEMPLATE.md
    │  └─ prompts/            P0、P1、P2、P3 模块提示词
-   └─ progress/              P0～P3 阶段总结、P0/P1/P2 各模块交接报告
+   └─ progress/              P0～P3 阶段总结及模块交接；DOCS.md 文档维护总结、DOCS-M1/M2/M3 中英 README 交接
 ```
 
 依赖方向：`__main__` → `server` → Request / Executor → CliBackend → commands / 固定 Lua → Aseprite CLI。旧兼容工具 → 共享算法/commands，尚未全部迁移到 Executor。live Backend 已实现同一 Backend 协议，通过 WebSocket 接入扩展；默认协商八种文档/事务/图片动作，可显式增加apply_animation。协议层不导入工具或后端。
@@ -99,7 +100,7 @@ aseprite-mcp/
 
 | 入口 | 实际位置或状态 |
 |---|---|
-| 启动 | `uv run --locked python -m aseprite_mcp`；或 `uv run --locked aseprite-mcp [--host 127.0.0.1] [--port 8765]`，stdio |
+| 启动 | PyPI：`uvx --python 3.13 aseprite-mcp==0.4.1`；源码：`uv run --locked python -m aseprite_mcp` 或 `uv run --locked aseprite-mcp [--host 127.0.0.1] [--port 8765]`，均为 stdio |
 | 工具配置 | `ASEPRITE_MCP_TOOL_PROFILE=core`（默认 9）/cli（116）/all（125）；原始 Lua 额外显式开启 |
 | 依赖同步 | `uv sync --locked --python 3.13` |
 | 测试 | `uv run --locked pytest -q --basetemp=.work/pytest`；详见 [TESTING](TESTING.md) |
@@ -110,7 +111,7 @@ aseprite-mcp/
 
 ## 规划结构：尚未实现
 
-基础动画已建立；其余高级能力为P3清单明确的后续范围；远程发布入口未建立且不自动执行。scripts 与 Windows CI 配置已建立；下载日志确认远程 CI 已运行并因缺少 .work 失败，PACK-M3 本地修复验证通过，远程重跑待执行。
+基础动画已建立；其余高级能力为P3清单明确的后续范围。正式 PyPI 0.4.1 已公开；用户已发布扩展 Release，README 使用 origin 对应 Release 列表入口，匿名访问 404、具体附件未复核。scripts 与 Windows CI 配置已建立；下载日志确认远程 CI 已运行并因缺少 .work 失败，PACK-M3 本地修复验证通过，远程重跑待执行。
 
 ## 复核记录与更新规则
 
@@ -118,6 +119,7 @@ P0-M1 导入上游源码、测试和环境入口；P0-M2 增加协议/配置/执
 
 2026-10-21 Git 复核：用户单独授权初始化并创建一次本地提交；已建立 `.git/`，补充早期根目录测试产物忽略规则，产品职责和启动/测试/打包入口无变化。
 
+2026-10-21 清理复核：按用户授权删除根目录 12 个早期测试画布/图像、历次 pytest 临时目录、项目/测试 Python 字节码与 pytest 缓存、构建包、上游下载副本、uv 下载缓存及已确认无提交/对象的空 Git 初始化备份。保留 `.venv/` 及其依赖的 `.work/python/`、本地 Aseprite、验收日志/XML、已入库来源清单和全部源码/测试。`.work/` 后续可再生成临时缓存和测试输出，使用后按需清理；产品模块、职责和入口无变化。
 
 2026-10-21 P1-M1：新增 live.py、extension/ 与 test_live_bridge.py；FastMCP lifespan 实际监听回环端口，websockets 15.0.1；真实 UI 扩展生命周期通过。
 
@@ -142,6 +144,8 @@ P2-M4验收复核：197项全量、61项无软件检查、真实无文件读取/
 2026-10-22 P3-M1：新增兼容说明、逐工具 JSON 矩阵和 check_capabilities.py；116 项与实际 CLI 注册逐项一致，冻结基础动画批次，无产品能力变化。
 
 2026-10-22 P3-M2：新增animation.lua与test_live_animation.py；config/protocol/server/live新增可选animation能力集，editor补时间轴指纹与删除帧上下文恢复。打包纳入第五个Lua，verify_install支持--port/--animation；实时测试夹具支持独立测试端口，CI纳入动画契约与矩阵校验。
+
+2026-10-22 DOCS-M1：README.md 重写为中文公开使用入口，新增 README.en.md 英文入口并互链；新增文档维护总结及交接。pyproject.toml 的 sdist 清单纳入英文 README，保留源码包中的语言切换目标；产品模块、依赖、版本及启动/测试入口无变化。
 
 2026-10-22 PACK-M1：源码分发改为运行源码、Lua扩展、build_release.py、构建/锁文件、环境样例、README及MIT许可白名单。wheel/sdist/扩展统一拒绝docs、提示词、AGENTS/SKILL、执行计划和CONTRIBUTING；测试、CI及其他开发脚本不进入源码分发，完整开发测试从Git仓库运行。新增PACK.md/PACK-M1.md分发维护交接；origin为git@github.com:greenlogs/aseprite-mcp-live.git。仓库中的维护文档仍保留。
 

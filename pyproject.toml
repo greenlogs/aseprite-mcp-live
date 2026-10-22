@@ -1,5 +1,8 @@
 [project]
 name = "aseprite-mcp"
+authors = [
+    {name = "greenlogs", email = "tryz189853302550@gmail.com"},
+]
 version = "0.4.1"
 description = "Aseprite MCP with explicit CLI and live backend contracts"
 readme = "README.md"
@@ -12,6 +15,7 @@ dependencies = [
     "python-dotenv>=1.0.1",
     "pydantic>=2.11,<3",
     "websockets>=15,<16",
+    "twine>=7.0.0",
 ]
 
 [dependency-groups]

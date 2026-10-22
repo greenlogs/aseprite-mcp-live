@@ -3,12 +3,11 @@
 /.work/
 /.env
 /.env.*
+/.pypirc
 !/.env.example
 /.mcp.json
 /.codex/
 /.agents/
-*.aseprite-crash
-*.aseprite-recovery
 # Python, test and build outputs
 /.venv/
 __pycache__/
@@ -20,13 +19,6 @@ __pycache__/
 /coverage.xml
 /.coverage
 # Legacy test outputs left at the project root; keep licensed test assets trackable.
-/cig_test_*.aseprite
-/group_layers.aseprite
-/slashed_groups.aseprite
-/clip.gif
-/frame1.png
-/sheet.png
-/sheet_tag.png
 # OS and editor state
 .DS_Store
 Thumbs.db

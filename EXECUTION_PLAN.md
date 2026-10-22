@@ -4,7 +4,7 @@
 
 `- [x]`：已实现且验收通过；`- [ ]`：未完成或未验收。默认按阶段与模块顺序，每次处理一个模块。
 
-模块结束：按[交接模板](docs/development/MODULE_REPORT_TEMPLATE.md)生成 `docs/progress/<模块编号>.md`，同步阶段总结与本文件；涉及结构变化时同步[项目结构](docs/PROJECT_STRUCTURE.md)。已验收开发模块默认本地提交，不推送。阶段结束另做集成验收。
+模块结束：按[交接模板](docs/development/MODULE_REPORT_TEMPLATE.md)生成 `docs/progress/<模块编号>.md`，同步阶段总结与本文件；涉及结构变化时同步[项目结构](docs/PROJECT_STRUCTURE.md)。已验收开发模块默认本地提交，不推送。阶段结束另做集成验收。测试产生的文件，如果对后续开发和用户验收是不必要，进行清理。
 
 当前任务：P3 已验收；维护入口为 [兼容清单](docs/development/CAPABILITIES.md)与 [P3-M2交接](docs/progress/P3-M2.md)，后续能力需另行冻结批次。
 
@@ -40,6 +40,16 @@
 - [x] [P3-M2 · 按能力组迁移与回归](docs/development/prompts/P3-高级能力迁移.md#p3-m2)
 
 首发交付点：P2。后续演进：P3 按复核后的能力清单分批迁移。P0/P1/P2/P3 已验收，0.4.0基础动画候选已验收但尚未发布；P0 基线已按用户授权初始化并入库，P1/P2/P3 按模块本地提交；P3阶段结束时未进行软件分发或 GitHub 推送（本次仓库交付见PACK-M1）；首版不要求全部上游工具实时可用，也不承诺未验收平台。
+
+## 文档维护
+
+独立于 P0～P3 产品阶段，维护公开使用文档；[维护总结](docs/progress/DOCS.md)。
+
+- [x] [DOCS-M1 · 中英 README 整理](docs/progress/DOCS-M1.md)
+- [x] [DOCS-M2 · PyPI 与 Release 使用入口](docs/progress/DOCS-M2.md)
+- [x] [DOCS-M3 · 按中文版同步英文 README](docs/progress/DOCS-M3.md)
+
+2026-10-22：正式 PyPI 已核实为 0.4.1；中英 README 改为 Windows uv、uvx 和本地构建两种使用方式，移除内部文档引用；扩展使用用户已发布的 Release 入口，详见维护总结。
 
 ## 分发维护
 
