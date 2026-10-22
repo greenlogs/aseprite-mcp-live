@@ -1,12 +1,12 @@
 # 动态项目结构
 
-最近复核：2026-10-22，P3-M2 基础动画与阶段集成。结构说明唯一来源；实际与规划分开。
+最近复核：2026-10-22，PACK-M1 分发白名单与首次推送。结构说明唯一来源；实际与规划分开。
 
 ## 实际结构
 
 ```text
 aseprite-mcp/
-├─ .git/                     用户授权建立的本地版本库，main 分支，无远程
+├─ .git/                     用户授权建立的本地版本库，main 分支，origin 指向用户指定 GitHub 仓库
 ├─ Aseprite/                 本地软件与个人数据，忽略、不分发
 ├─ .work/                    隔离 Python/安装环境、验收日志/XML、P1/P2 图片、release 候选和清理记录，忽略
 ├─ .venv/                    uv 项目环境，忽略
@@ -142,3 +142,5 @@ P2-M4验收复核：197项全量、61项无软件检查、真实无文件读取/
 2026-10-22 P3-M1：新增兼容说明、逐工具 JSON 矩阵和 check_capabilities.py；116 项与实际 CLI 注册逐项一致，冻结基础动画批次，无产品能力变化。
 
 2026-10-22 P3-M2：新增animation.lua与test_live_animation.py；config/protocol/server/live新增可选animation能力集，editor补时间轴指纹与删除帧上下文恢复。打包纳入第五个Lua，verify_install支持--port/--animation；实时测试夹具支持独立测试端口，CI纳入动画契约与矩阵校验。
+
+2026-10-22 PACK-M1：源码分发改为运行源码、Lua扩展、build_release.py、构建/锁文件、环境样例、README及MIT许可白名单。wheel/sdist/扩展统一拒绝docs、提示词、AGENTS/SKILL、执行计划和CONTRIBUTING；测试、CI及其他开发脚本不进入源码分发，完整开发测试从Git仓库运行。新增PACK.md/PACK-M1.md分发维护交接；origin为git@github.com:greenlogs/aseprite-mcp-live.git。仓库中的维护文档仍保留。

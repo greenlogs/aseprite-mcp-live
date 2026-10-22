@@ -35,8 +35,12 @@ packages = ["aseprite_mcp"]
 
 [tool.hatch.build.targets.sdist]
 include = [
-    "/aseprite_mcp", "/extension", "/tests", "/scripts", "/docs",
-    "/.github/workflows", "/pyproject.toml", "/uv.lock", "/.python-version",
-    "/.env.example", "/LICENSE", "/README.md", "/CONTRIBUTING.md",
-    "/AGENTS.md", "/EXECUTION_PLAN.md",
+    "/aseprite_mcp", "/extension", "/scripts/build_release.py",
+    "/pyproject.toml", "/uv.lock", "/.python-version",
+    "/.env.example", "/LICENSE", "/README*.md",
+]
+exclude = [
+    "/docs", "/tests", "/.github", "/.agents", "/.codex",
+    "**/AGENTS.md", "**/SKILL.md", "**/CONTRIBUTING*", "**/EXECUTION_PLAN*",
+    "**/prompts/**", "**/执行计划*",
 ]

@@ -2,7 +2,7 @@
 import argparse
 import hashlib
 import json
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import subprocess
 import tarfile
 import tomllib
@@ -10,6 +10,24 @@ import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 EXTENSION_FILES = ("package.json", "main.lua", "bridge.lua", "editor.lua", "preview.lua", "animation.lua")
+SDIST_ROOT_FILES = {"pyproject.toml", "uv.lock", ".python-version", ".env.example",
+                    "LICENSE", "README.md", "README.en.md", "PKG-INFO", ".gitignore"}
+
+
+def check_distribution_paths(names):
+    """Apply the same content restrictions to wheel, sdist and extension ZIP."""
+    forbidden = {"aseprite", ".env", ".venv", ".work", ".git", ".codex", ".agents",
+                 "__pycache__", "docs", "prompts"}
+    for name in names:
+        # Archive paths are POSIX; normalize backslashes to reject disguised paths.
+        path = PurePosixPath(name.replace("\\", "/"))
+        parts = tuple(part.lower() for part in path.parts)
+        assert not path.is_absolute() and ".." not in parts and not any(":" in part for part in parts), name
+        assert not forbidden.intersection(parts), name
+        for part in parts:
+            assert part not in {"agents.md", "skill.md"}, name
+            assert not part.startswith(("contributing", "execution_plan", "执行计划")), name
+        assert not name.lower().endswith((".exe", ".dll", ".pyc", ".aseprite-crash", ".aseprite-recovery")), name
 
 
 def version():
@@ -33,7 +51,21 @@ def inspect_artifacts(directory):
         assert all(member.isfile() or member.isdir() for member in members), "Links are not distributed"
         source_files = [member.name for member in members]
         assert any(name.endswith("/extension/package.json") for name in source_files)
-        assert any(name.endswith("/docs/INSTALL.md") for name in source_files)
+        assert any(name.endswith("/scripts/build_release.py") for name in source_files)
+        assert any(name.endswith("/LICENSE") for name in source_files)
+        roots = {PurePosixPath(name).parts[0] for name in source_files}
+        assert len(roots) == 1, "Source archive must have one root directory"
+        for member in members:
+            if not member.isfile():
+                continue
+            relative = PurePosixPath(member.name).parts[1:]
+            assert relative, member.name
+            allowed = (len(relative) == 1 and relative[0] in SDIST_ROOT_FILES or
+                       relative[0] == "aseprite_mcp" or
+                       len(relative) == 2 and relative[0] == "extension" and
+                       relative[1] in {*EXTENSION_FILES, "LICENSE", "NOTICE.md"} or
+                       relative == ("scripts", "build_release.py"))
+            assert allowed, f"Unexpected source distribution file: {member.name}"
     with zipfile.ZipFile(extension) as archive:
         extension_files = archive.namelist()
         assert set(extension_files) == {*EXTENSION_FILES, "LICENSE", "NOTICE.md"}
@@ -41,12 +73,7 @@ def inspect_artifacts(directory):
         assert manifest["version"] == release_version
         assert manifest["contributes"]["scripts"] == [{"path": "./main.lua"}]
         assert archive.read("LICENSE") == (ROOT / "LICENSE").read_bytes()
-    forbidden = {"aseprite", ".env", ".venv", ".work", ".git", ".codex", ".agents", "__pycache__"}
-    for name in [*wheel_files, *source_files, *extension_files]:
-        parts = Path(name).parts
-        assert not Path(name).is_absolute() and ".." not in parts, name
-        assert not forbidden.intersection(part.lower() for part in parts), name
-        assert not name.lower().endswith((".exe", ".dll", ".pyc", ".aseprite-crash", ".aseprite-recovery")), name
+    check_distribution_paths([*wheel_files, *source_files, *extension_files])
     requirements = directory / "requirements.txt"
     assert requirements.is_file() and "-e ." not in requirements.read_text(encoding="utf-8")
     return {path.name: {"bytes": path.stat().st_size, "sha256": hashlib.sha256(path.read_bytes()).hexdigest()}
