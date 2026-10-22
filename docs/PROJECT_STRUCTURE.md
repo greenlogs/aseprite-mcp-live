@@ -14,6 +14,7 @@ aseprite-mcp/
 ├─ .github/workflows/check.yml Windows 契约/文档/打包 CI，无 GUI 或自动发布步骤
 ├─ scripts/
 │  ├─ build_release.py      uv 构建、确定性扩展 ZIP、生产依赖及分发清单校验
+│  ├─ check_capabilities.py 逐工具兼容矩阵与实际注册核对
 │  ├─ check_docs.py         Markdown 本地链接、服务入口及模块索引检查
 │  └─ verify_install.py     独立 Windows 安装验收脚本，真实 MCP SDK/UI 与图片证据
 ├─ aseprite_mcp/
@@ -79,6 +80,8 @@ aseprite-mcp/
    ├─ TESTING.md             配置、真实命令、测试分层与集成步骤
    ├─ development/
    │  ├─ README.md           开发约定
+   │  ├─ CAPABILITIES.md     P3兼容抽查与冻结批次
+   │  ├─ tool-compatibility.json 全部116项工具/上游复核证据矩阵
    │  ├─ ARCHITECTURE.md     架构决策与实际/未来边界
    │  ├─ PROTOCOL.md         协议 v1 字段、默认值、错误、PNG 与兼容约定
    │  ├─ protocol-v1.examples.json
@@ -133,3 +136,5 @@ P2-M3 验收复核：197项全量、61项无软件检查、真实强杀重启自
 2026-10-22 P2-M4：移除发现目录/连接文件/token及Legacy JSON UI；原生WebSocket直接连接配置端点，连接关闭/错误由Timer重建；全部实时夹具与独立安装验收移除读文件/传凭据路径。旧历史结构记录仅描述当时版本，不代表当前能力。
 
 P2-M4验收复核：197项全量、61项无软件检查、真实无文件读取/强杀重启/独立安装和客户端图片显示通过。当前候选.work/release-direct，证据.work/direct-evidence；0.3.0未发布。
+
+2026-10-22 P3-M1：新增兼容说明、逐工具 JSON 矩阵和 check_capabilities.py；116 项与实际 CLI 注册逐项一致，冻结基础动画批次，无产品能力变化。

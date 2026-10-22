@@ -11,3 +11,7 @@
 P0-M2 在此基线上新增协议模型、受控 CLI 适配器和能力暴露配置，不把高级 CLI 工具当作实时功能。后续升级必须记录新 SHA、许可、差异与真实回归。
 
 P2 分发复核：wheel 保留原 MIT 许可，扩展包包含 LICENSE 与自包含 NOTICE.md，源码包保留本来源记录及导入清单。新增实时/可靠性/打包代码同为 MIT；没有引入字体、示例图像或 Aseprite 程序。生产依赖由锁定 requirements.txt 单独安装，不嵌入服务 wheel。
+
+## P3-M1 上游复核（2026-10-22）
+
+GitHub HEAD 实查 a89b205bed31930ee141edf319e78c71ef16bba6，123 项装饰器工具，比导入基线新增 7 项、无删除/更名。固定归档摘要、逐项名称和 MIT 原文见 [兼容矩阵](development/tool-compatibility.json)，范围判断见 [兼容说明](development/CAPABILITIES.md)。保留导入 SHA，不升级或混入新源码；新批次沿用已导入算法与官方 API，继续保留原版权。

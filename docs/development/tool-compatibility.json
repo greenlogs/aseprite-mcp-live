@@ -1,0 +1,2724 @@
+{
+  "baseline": "90d1696a7e41edff89bbd0823ae6a5f86c114bcc",
+  "upstream_review": {
+    "checked_date": "2026-10-22",
+    "endpoint": "https://api.github.com/repos/diivi/aseprite-mcp/commits/HEAD",
+    "sha": "a89b205bed31930ee141edf319e78c71ef16bba6",
+    "commit_date": "2026-10-21T23:55:48Z",
+    "message": "feat: add row drawing, region views, lint and export tools from session analysis\n\nGaps found by reading four Opus 5.5 drawing sessions, where agents kept\nrebuilding these in Lua:\n\n- draw_rows / read_rows: draw and read pixels as character rows with a\n  colour legend, rejecting ragged rows; optional outline\n- view_sprite region=\"x,y,w,h\" with sprite-coordinate rulers, and a\n  larger auto-zoom for multi-frame views\n- export_animation: scaled GIF/PNG export on an optional background\n  without touching the source sprite\n- get_bounds, plus layer_name/region filters on compare_frames\n- outline_cel region, lint_sprite (detached pieces, lone pixels,\n  stray colours), draw_iso_box\n- Instructions point at view_sprite, list tools to reach for before Lua,\n  and cover small organic parts, scene size, objects resting on surfaces\n  and soft-body squash and stretch; run_lua_script is now a last resort;\n  animation_workflow_guide gains an idle use case\n- README tool tables cover all 123 tools\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>",
+    "archive_sha256": "e55499e1a8c7d82ea09a0e9e642f73c6d120eb3a7054b55a06921d366ecbb5b7",
+    "tool_count": 123,
+    "tools": [
+      {
+        "module": "analysis",
+        "name": "render_onion_skin"
+      },
+      {
+        "module": "analysis",
+        "name": "compare_frames"
+      },
+      {
+        "module": "analysis",
+        "name": "get_bounds"
+      },
+      {
+        "module": "analysis",
+        "name": "get_color_stats"
+      },
+      {
+        "module": "analysis",
+        "name": "lint_sprite"
+      },
+      {
+        "module": "animation",
+        "name": "add_frames"
+      },
+      {
+        "module": "animation",
+        "name": "set_frame_duration_all"
+      },
+      {
+        "module": "animation",
+        "name": "set_layer_visibility"
+      },
+      {
+        "module": "animation",
+        "name": "set_layer_opacity"
+      },
+      {
+        "module": "animation",
+        "name": "get_sprite_info"
+      },
+      {
+        "module": "animation",
+        "name": "duplicate_frame_range"
+      },
+      {
+        "module": "animation",
+        "name": "set_cel_position"
+      },
+      {
+        "module": "animation",
+        "name": "tween_cel_positions"
+      },
+      {
+        "module": "animation",
+        "name": "offset_cel_positions"
+      },
+      {
+        "module": "animation",
+        "name": "create_cel"
+      },
+      {
+        "module": "animation",
+        "name": "clear_cel"
+      },
+      {
+        "module": "animation",
+        "name": "copy_cel"
+      },
+      {
+        "module": "animation",
+        "name": "copy_frame"
+      },
+      {
+        "module": "animation",
+        "name": "propagate_frame_to_range"
+      },
+      {
+        "module": "animation",
+        "name": "set_tag"
+      },
+      {
+        "module": "animation",
+        "name": "set_onion_skin"
+      },
+      {
+        "module": "animation",
+        "name": "propagate_cels"
+      },
+      {
+        "module": "animation",
+        "name": "tween_cel_positions_eased"
+      },
+      {
+        "module": "animation",
+        "name": "oscillate_cel_positions"
+      },
+      {
+        "module": "animation",
+        "name": "tween_cel_opacity_eased"
+      },
+      {
+        "module": "animation",
+        "name": "tween_cel_scale_eased"
+      },
+      {
+        "module": "animation",
+        "name": "delete_frame"
+      },
+      {
+        "module": "animation",
+        "name": "delete_tag"
+      },
+      {
+        "module": "animation",
+        "name": "set_cel_opacity"
+      },
+      {
+        "module": "canvas",
+        "name": "create_canvas"
+      },
+      {
+        "module": "canvas",
+        "name": "add_layer"
+      },
+      {
+        "module": "canvas",
+        "name": "add_group"
+      },
+      {
+        "module": "canvas",
+        "name": "add_frame"
+      },
+      {
+        "module": "canvas",
+        "name": "set_frame"
+      },
+      {
+        "module": "canvas",
+        "name": "set_frame_duration"
+      },
+      {
+        "module": "canvas",
+        "name": "set_layer"
+      },
+      {
+        "module": "drawing",
+        "name": "draw_pixels"
+      },
+      {
+        "module": "drawing",
+        "name": "draw_line"
+      },
+      {
+        "module": "drawing",
+        "name": "draw_rectangle"
+      },
+      {
+        "module": "drawing",
+        "name": "fill_area"
+      },
+      {
+        "module": "drawing",
+        "name": "draw_circle"
+      },
+      {
+        "module": "drawing",
+        "name": "draw_pixels_at"
+      },
+      {
+        "module": "drawing",
+        "name": "draw_line_at"
+      },
+      {
+        "module": "drawing",
+        "name": "draw_rectangle_at"
+      },
+      {
+        "module": "drawing",
+        "name": "draw_circle_at"
+      },
+      {
+        "module": "drawing",
+        "name": "fill_area_at"
+      },
+      {
+        "module": "drawing",
+        "name": "draw_polygon"
+      },
+      {
+        "module": "drawing",
+        "name": "draw_path"
+      },
+      {
+        "module": "drawing",
+        "name": "apply_gradient_rect"
+      },
+      {
+        "module": "drawing",
+        "name": "draw_ellipse_at"
+      },
+      {
+        "module": "drawing",
+        "name": "draw_rows"
+      },
+      {
+        "module": "drawing",
+        "name": "draw_iso_box"
+      },
+      {
+        "module": "export",
+        "name": "export_sprite"
+      },
+      {
+        "module": "export",
+        "name": "copy_sprite"
+      },
+      {
+        "module": "export",
+        "name": "export_frame"
+      },
+      {
+        "module": "export",
+        "name": "export_spritesheet"
+      },
+      {
+        "module": "export",
+        "name": "export_layers"
+      },
+      {
+        "module": "export",
+        "name": "export_tag"
+      },
+      {
+        "module": "export",
+        "name": "export_animation"
+      },
+      {
+        "module": "export",
+        "name": "import_image_as_layer"
+      },
+      {
+        "module": "fx",
+        "name": "outline_cel"
+      },
+      {
+        "module": "fx",
+        "name": "replace_color"
+      },
+      {
+        "module": "fx",
+        "name": "adjust_hsl"
+      },
+      {
+        "module": "fx",
+        "name": "apply_dither_gradient"
+      },
+      {
+        "module": "fx",
+        "name": "apply_dither_pattern"
+      },
+      {
+        "module": "guide",
+        "name": "animation_workflow_guide"
+      },
+      {
+        "module": "layers",
+        "name": "delete_layer"
+      },
+      {
+        "module": "layers",
+        "name": "rename_layer"
+      },
+      {
+        "module": "layers",
+        "name": "duplicate_layer"
+      },
+      {
+        "module": "layers",
+        "name": "reorder_layer"
+      },
+      {
+        "module": "layers",
+        "name": "set_layer_blend_mode"
+      },
+      {
+        "module": "layers",
+        "name": "merge_layer_down"
+      },
+      {
+        "module": "layers",
+        "name": "flatten_sprite"
+      },
+      {
+        "module": "native_fx",
+        "name": "outline_native"
+      },
+      {
+        "module": "native_fx",
+        "name": "adjust_hsl_native"
+      },
+      {
+        "module": "native_fx",
+        "name": "adjust_brightness_contrast"
+      },
+      {
+        "module": "native_fx",
+        "name": "invert_colors"
+      },
+      {
+        "module": "native_fx",
+        "name": "apply_convolution"
+      },
+      {
+        "module": "native_fx",
+        "name": "list_convolution_matrices"
+      },
+      {
+        "module": "native_fx",
+        "name": "extract_palette"
+      },
+      {
+        "module": "palette",
+        "name": "get_palette"
+      },
+      {
+        "module": "palette",
+        "name": "set_palette"
+      },
+      {
+        "module": "palette",
+        "name": "remap_colors_in_cel_range"
+      },
+      {
+        "module": "palette",
+        "name": "list_palette_presets"
+      },
+      {
+        "module": "palette",
+        "name": "apply_palette_preset"
+      },
+      {
+        "module": "palette",
+        "name": "generate_color_ramp"
+      },
+      {
+        "module": "palette",
+        "name": "quantize_to_palette"
+      },
+      {
+        "module": "palette",
+        "name": "set_color_mode"
+      },
+      {
+        "module": "pixel_read",
+        "name": "get_pixel_color"
+      },
+      {
+        "module": "pixel_read",
+        "name": "get_pixels_rect"
+      },
+      {
+        "module": "pixel_read",
+        "name": "get_composite_pixel"
+      },
+      {
+        "module": "pixel_read",
+        "name": "get_composite_rect"
+      },
+      {
+        "module": "pixel_read",
+        "name": "read_rows"
+      },
+      {
+        "module": "preview",
+        "name": "start_preview_server"
+      },
+      {
+        "module": "preview",
+        "name": "stop_preview_server"
+      },
+      {
+        "module": "quality",
+        "name": "ensure_layers_present"
+      },
+      {
+        "module": "quality",
+        "name": "validate_scene"
+      },
+      {
+        "module": "quality",
+        "name": "audit_animation"
+      },
+      {
+        "module": "quality",
+        "name": "animation_sanitize"
+      },
+      {
+        "module": "scene",
+        "name": "copy_layers_between_sprites"
+      },
+      {
+        "module": "script",
+        "name": "run_lua_script"
+      },
+      {
+        "module": "selection",
+        "name": "move_region"
+      },
+      {
+        "module": "selection",
+        "name": "copy_region"
+      },
+      {
+        "module": "selection",
+        "name": "erase_region"
+      },
+      {
+        "module": "selection",
+        "name": "erase_color"
+      },
+      {
+        "module": "slices",
+        "name": "create_slice"
+      },
+      {
+        "module": "slices",
+        "name": "set_slice_center"
+      },
+      {
+        "module": "slices",
+        "name": "set_slice_pivot"
+      },
+      {
+        "module": "slices",
+        "name": "list_slices"
+      },
+      {
+        "module": "slices",
+        "name": "delete_slice"
+      },
+      {
+        "module": "text",
+        "name": "list_text_fonts"
+      },
+      {
+        "module": "text",
+        "name": "measure_text"
+      },
+      {
+        "module": "text",
+        "name": "draw_text"
+      },
+      {
+        "module": "tilemap",
+        "name": "create_tilemap_layer"
+      },
+      {
+        "module": "tilemap",
+        "name": "draw_on_tile"
+      },
+      {
+        "module": "tilemap",
+        "name": "set_tiles"
+      },
+      {
+        "module": "tilemap",
+        "name": "get_tile_at"
+      },
+      {
+        "module": "tilemap",
+        "name": "get_tilemap_info"
+      },
+      {
+        "module": "transform",
+        "name": "flip_layer"
+      },
+      {
+        "module": "transform",
+        "name": "rotate_layer"
+      },
+      {
+        "module": "transform",
+        "name": "resize_canvas"
+      },
+      {
+        "module": "transform",
+        "name": "crop_canvas"
+      },
+      {
+        "module": "view",
+        "name": "view_sprite"
+      }
+    ],
+    "added": [
+      "draw_iso_box",
+      "draw_rows",
+      "export_animation",
+      "get_bounds",
+      "lint_sprite",
+      "read_rows",
+      "view_sprite"
+    ],
+    "removed": [],
+    "license": "MIT License\n\nCopyright (c) 2024 Divyansh Singh\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE. "
+  },
+  "phase_scope": {
+    "module": "P3-M2",
+    "capability_set": "animation",
+    "action": "apply_animation",
+    "operations": [
+      "add_frames",
+      "delete_frame",
+      "set_frame_duration",
+      "set_tag",
+      "delete_tag"
+    ]
+  },
+  "tools": [
+    {
+      "name": "render_onion_skin",
+      "group": "analysis",
+      "path": "aseprite_mcp/tools/analysis.py",
+      "line": 30,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_analysis.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "compare_frames",
+      "group": "analysis",
+      "path": "aseprite_mcp/tools/analysis.py",
+      "line": 132,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "read_export_or_indirect_command; inspect before migration",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_analysis.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "get_color_stats",
+      "group": "analysis",
+      "path": "aseprite_mcp/tools/analysis.py",
+      "line": 229,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "read_export_or_indirect_command; inspect before migration",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_analysis.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "add_frames",
+      "group": "animation",
+      "path": "aseprite_mcp/tools/animation.py",
+      "line": 8,
+      "cli": "enabled",
+      "live": "P3-M2",
+      "migration": "rewrite",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_analysis.py",
+        "tests/test_animation.py",
+        "tests/test_export.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "P3-M2 pending",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "set_frame_duration_all",
+      "group": "animation",
+      "path": "aseprite_mcp/tools/animation.py",
+      "line": 47,
+      "cli": "enabled",
+      "live": "P3-M2",
+      "migration": "rewrite",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [],
+      "simulation": "not evidence of live support",
+      "real_live": "P3-M2 pending",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "set_layer_visibility",
+      "group": "animation",
+      "path": "aseprite_mcp/tools/animation.py",
+      "line": 79,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_error_propagation.py",
+        "tests/test_group_layers.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "set_layer_opacity",
+      "group": "animation",
+      "path": "aseprite_mcp/tools/animation.py",
+      "line": 114,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "get_sprite_info",
+      "group": "animation",
+      "path": "aseprite_mcp/tools/animation.py",
+      "line": 150,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "read_export_or_indirect_command; inspect before migration",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_animation.py",
+        "tests/test_create_into_group.py",
+        "tests/test_environment.py",
+        "tests/test_sprite_info_groups.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "duplicate_frame_range",
+      "group": "animation",
+      "path": "aseprite_mcp/tools/animation.py",
+      "line": 215,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "set_cel_position",
+      "group": "animation",
+      "path": "aseprite_mcp/tools/animation.py",
+      "line": 269,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "tween_cel_positions",
+      "group": "animation",
+      "path": "aseprite_mcp/tools/animation.py",
+      "line": 343,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "offset_cel_positions",
+      "group": "animation",
+      "path": "aseprite_mcp/tools/animation.py",
+      "line": 431,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "create_cel",
+      "group": "animation",
+      "path": "aseprite_mcp/tools/animation.py",
+      "line": 488,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "clear_cel",
+      "group": "animation",
+      "path": "aseprite_mcp/tools/animation.py",
+      "line": 537,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "copy_cel",
+      "group": "animation",
+      "path": "aseprite_mcp/tools/animation.py",
+      "line": 572,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "copy_frame",
+      "group": "animation",
+      "path": "aseprite_mcp/tools/animation.py",
+      "line": 622,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "propagate_frame_to_range",
+      "group": "animation",
+      "path": "aseprite_mcp/tools/animation.py",
+      "line": 683,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "set_tag",
+      "group": "animation",
+      "path": "aseprite_mcp/tools/animation.py",
+      "line": 754,
+      "cli": "enabled",
+      "live": "P3-M2",
+      "migration": "rewrite",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_animation.py",
+        "tests/test_error_propagation.py",
+        "tests/test_export.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "P3-M2 pending",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "set_onion_skin",
+      "group": "animation",
+      "path": "aseprite_mcp/tools/animation.py",
+      "line": 811,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "read_export_or_indirect_command; inspect before migration",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "propagate_cels",
+      "group": "animation",
+      "path": "aseprite_mcp/tools/animation.py",
+      "line": 832,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "tween_cel_positions_eased",
+      "group": "animation",
+      "path": "aseprite_mcp/tools/animation.py",
+      "line": 914,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "oscillate_cel_positions",
+      "group": "animation",
+      "path": "aseprite_mcp/tools/animation.py",
+      "line": 1011,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "tween_cel_opacity_eased",
+      "group": "animation",
+      "path": "aseprite_mcp/tools/animation.py",
+      "line": 1097,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "tween_cel_scale_eased",
+      "group": "animation",
+      "path": "aseprite_mcp/tools/animation.py",
+      "line": 1195,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "delete_frame",
+      "group": "animation",
+      "path": "aseprite_mcp/tools/animation.py",
+      "line": 1320,
+      "cli": "enabled",
+      "live": "P3-M2",
+      "migration": "rewrite",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_animation.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "P3-M2 pending",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "delete_tag",
+      "group": "animation",
+      "path": "aseprite_mcp/tools/animation.py",
+      "line": 1353,
+      "cli": "enabled",
+      "live": "P3-M2",
+      "migration": "rewrite",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_animation.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "P3-M2 pending",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "set_cel_opacity",
+      "group": "animation",
+      "path": "aseprite_mcp/tools/animation.py",
+      "line": 1389,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_animation.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "create_canvas",
+      "group": "canvas",
+      "path": "aseprite_mcp/tools/canvas.py",
+      "line": 7,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_cli_backend.py",
+        "tests/test_create_into_group.py",
+        "tests/test_environment.py",
+        "tests/test_error_propagation.py",
+        "tests/test_group_layers.py",
+        "tests/test_server.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "add_layer",
+      "group": "canvas",
+      "path": "aseprite_mcp/tools/canvas.py",
+      "line": 36,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_composite_read.py",
+        "tests/test_create_into_group.py",
+        "tests/test_drawing_fixes.py",
+        "tests/test_layers.py",
+        "tests/test_sprite_info_groups.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "add_group",
+      "group": "canvas",
+      "path": "aseprite_mcp/tools/canvas.py",
+      "line": 81,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_create_into_group.py",
+        "tests/test_sprite_info_groups.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "add_frame",
+      "group": "canvas",
+      "path": "aseprite_mcp/tools/canvas.py",
+      "line": 128,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_analysis.py",
+        "tests/test_animation.py",
+        "tests/test_export.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "set_frame",
+      "group": "canvas",
+      "path": "aseprite_mcp/tools/canvas.py",
+      "line": 157,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_error_propagation.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "set_frame_duration",
+      "group": "canvas",
+      "path": "aseprite_mcp/tools/canvas.py",
+      "line": 192,
+      "cli": "enabled",
+      "live": "P3-M2",
+      "migration": "rewrite",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_error_propagation.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "P3-M2 pending",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "set_layer",
+      "group": "canvas",
+      "path": "aseprite_mcp/tools/canvas.py",
+      "line": 230,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_error_propagation.py",
+        "tests/test_group_layers.py",
+        "tests/test_layers.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "draw_pixels",
+      "group": "drawing",
+      "path": "aseprite_mcp/tools/drawing.py",
+      "line": 15,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_drawing_fixes.py",
+        "tests/test_environment.py",
+        "tests/test_server.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "draw_line",
+      "group": "drawing",
+      "path": "aseprite_mcp/tools/drawing.py",
+      "line": 78,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_error_propagation.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "draw_rectangle",
+      "group": "drawing",
+      "path": "aseprite_mcp/tools/drawing.py",
+      "line": 162,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_analysis.py",
+        "tests/test_composite_read.py",
+        "tests/test_create_into_group.py",
+        "tests/test_fx.py",
+        "tests/test_group_layers.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "fill_area",
+      "group": "drawing",
+      "path": "aseprite_mcp/tools/drawing.py",
+      "line": 225,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "draw_circle",
+      "group": "drawing",
+      "path": "aseprite_mcp/tools/drawing.py",
+      "line": 277,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "draw_pixels_at",
+      "group": "drawing",
+      "path": "aseprite_mcp/tools/drawing.py",
+      "line": 335,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_drawing_fixes.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "draw_line_at",
+      "group": "drawing",
+      "path": "aseprite_mcp/tools/drawing.py",
+      "line": 404,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_error_propagation.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "draw_rectangle_at",
+      "group": "drawing",
+      "path": "aseprite_mcp/tools/drawing.py",
+      "line": 505,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_analysis.py",
+        "tests/test_composite_read.py",
+        "tests/test_create_into_group.py",
+        "tests/test_fx.py",
+        "tests/test_group_layers.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "draw_circle_at",
+      "group": "drawing",
+      "path": "aseprite_mcp/tools/drawing.py",
+      "line": 584,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "fill_area_at",
+      "group": "drawing",
+      "path": "aseprite_mcp/tools/drawing.py",
+      "line": 660,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "draw_polygon",
+      "group": "drawing",
+      "path": "aseprite_mcp/tools/drawing.py",
+      "line": 728,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_drawing_fixes.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "draw_path",
+      "group": "drawing",
+      "path": "aseprite_mcp/tools/drawing.py",
+      "line": 852,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "apply_gradient_rect",
+      "group": "drawing",
+      "path": "aseprite_mcp/tools/drawing.py",
+      "line": 949,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_drawing_fixes.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "draw_ellipse_at",
+      "group": "drawing",
+      "path": "aseprite_mcp/tools/drawing.py",
+      "line": 1044,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_drawing.py",
+        "tests/test_layers.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "export_sprite",
+      "group": "export",
+      "path": "aseprite_mcp/tools/export.py",
+      "line": 8,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "read_export_or_indirect_command; inspect before migration",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_cli_backend.py",
+        "tests/test_environment.py",
+        "tests/test_error_propagation.py",
+        "tests/test_export.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "copy_sprite",
+      "group": "export",
+      "path": "aseprite_mcp/tools/export.py",
+      "line": 52,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "export_frame",
+      "group": "export",
+      "path": "aseprite_mcp/tools/export.py",
+      "line": 92,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "read_export_or_indirect_command; inspect before migration",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_export.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "export_spritesheet",
+      "group": "export",
+      "path": "aseprite_mcp/tools/export.py",
+      "line": 143,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "read_export_or_indirect_command; inspect before migration",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_error_propagation.py",
+        "tests/test_export.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "export_layers",
+      "group": "export",
+      "path": "aseprite_mcp/tools/export.py",
+      "line": 241,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "read_export_or_indirect_command; inspect before migration",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_export.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "export_tag",
+      "group": "export",
+      "path": "aseprite_mcp/tools/export.py",
+      "line": 279,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "read_export_or_indirect_command; inspect before migration",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_error_propagation.py",
+        "tests/test_export.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "import_image_as_layer",
+      "group": "export",
+      "path": "aseprite_mcp/tools/export.py",
+      "line": 336,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_export.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "outline_cel",
+      "group": "fx",
+      "path": "aseprite_mcp/tools/fx.py",
+      "line": 15,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_fx.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "replace_color",
+      "group": "fx",
+      "path": "aseprite_mcp/tools/fx.py",
+      "line": 98,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_fx.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "adjust_hsl",
+      "group": "fx",
+      "path": "aseprite_mcp/tools/fx.py",
+      "line": 182,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_fx.py",
+        "tests/test_native_fx.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "apply_dither_gradient",
+      "group": "fx",
+      "path": "aseprite_mcp/tools/fx.py",
+      "line": 264,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_fx.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "apply_dither_pattern",
+      "group": "fx",
+      "path": "aseprite_mcp/tools/fx.py",
+      "line": 366,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_fx.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "animation_workflow_guide",
+      "group": "guide",
+      "path": "aseprite_mcp/tools/guide.py",
+      "line": 4,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "do_not_migrate",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "read_export_or_indirect_command; inspect before migration",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "delete_layer",
+      "group": "layers",
+      "path": "aseprite_mcp/tools/layers.py",
+      "line": 30,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_layers.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "rename_layer",
+      "group": "layers",
+      "path": "aseprite_mcp/tools/layers.py",
+      "line": 65,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_create_into_group.py",
+        "tests/test_group_layers.py",
+        "tests/test_layers.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "duplicate_layer",
+      "group": "layers",
+      "path": "aseprite_mcp/tools/layers.py",
+      "line": 103,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_create_into_group.py",
+        "tests/test_layers.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "reorder_layer",
+      "group": "layers",
+      "path": "aseprite_mcp/tools/layers.py",
+      "line": 172,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_layers.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "set_layer_blend_mode",
+      "group": "layers",
+      "path": "aseprite_mcp/tools/layers.py",
+      "line": 210,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_layers.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "merge_layer_down",
+      "group": "layers",
+      "path": "aseprite_mcp/tools/layers.py",
+      "line": 252,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_layers.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "flatten_sprite",
+      "group": "layers",
+      "path": "aseprite_mcp/tools/layers.py",
+      "line": 286,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_layers.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "outline_native",
+      "group": "native_fx",
+      "path": "aseprite_mcp/tools/native_fx.py",
+      "line": 41,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "read_export_or_indirect_command; inspect before migration",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_native_fx.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "adjust_hsl_native",
+      "group": "native_fx",
+      "path": "aseprite_mcp/tools/native_fx.py",
+      "line": 82,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "read_export_or_indirect_command; inspect before migration",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_native_fx.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "adjust_brightness_contrast",
+      "group": "native_fx",
+      "path": "aseprite_mcp/tools/native_fx.py",
+      "line": 122,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "read_export_or_indirect_command; inspect before migration",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_native_fx.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "invert_colors",
+      "group": "native_fx",
+      "path": "aseprite_mcp/tools/native_fx.py",
+      "line": 158,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "read_export_or_indirect_command; inspect before migration",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_native_fx.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "apply_convolution",
+      "group": "native_fx",
+      "path": "aseprite_mcp/tools/native_fx.py",
+      "line": 187,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "read_export_or_indirect_command; inspect before migration",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_native_fx.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "list_convolution_matrices",
+      "group": "native_fx",
+      "path": "aseprite_mcp/tools/native_fx.py",
+      "line": 222,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "read_export_or_indirect_command; inspect before migration",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_native_fx.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "extract_palette",
+      "group": "native_fx",
+      "path": "aseprite_mcp/tools/native_fx.py",
+      "line": 232,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_native_fx.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "get_palette",
+      "group": "palette",
+      "path": "aseprite_mcp/tools/palette.py",
+      "line": 52,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "read_export_or_indirect_command; inspect before migration",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "set_palette",
+      "group": "palette",
+      "path": "aseprite_mcp/tools/palette.py",
+      "line": 85,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "remap_colors_in_cel_range",
+      "group": "palette",
+      "path": "aseprite_mcp/tools/palette.py",
+      "line": 120,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_error_propagation.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "list_palette_presets",
+      "group": "palette",
+      "path": "aseprite_mcp/tools/palette.py",
+      "line": 237,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "read_export_or_indirect_command; inspect before migration",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_palette.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "apply_palette_preset",
+      "group": "palette",
+      "path": "aseprite_mcp/tools/palette.py",
+      "line": 247,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "read_export_or_indirect_command; inspect before migration",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_palette.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "generate_color_ramp",
+      "group": "palette",
+      "path": "aseprite_mcp/tools/palette.py",
+      "line": 268,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "read_export_or_indirect_command; inspect before migration",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_palette.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "quantize_to_palette",
+      "group": "palette",
+      "path": "aseprite_mcp/tools/palette.py",
+      "line": 317,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_palette.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "set_color_mode",
+      "group": "palette",
+      "path": "aseprite_mcp/tools/palette.py",
+      "line": 430,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_palette.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "get_pixel_color",
+      "group": "pixel_read",
+      "path": "aseprite_mcp/tools/pixel_read.py",
+      "line": 10,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "read_export_or_indirect_command; inspect before migration",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_composite_read.py",
+        "tests/test_drawing.py",
+        "tests/test_drawing_fixes.py",
+        "tests/test_error_propagation.py",
+        "tests/test_fx.py",
+        "tests/test_group_layers.py",
+        "tests/test_native_fx.py",
+        "tests/test_text.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "get_pixels_rect",
+      "group": "pixel_read",
+      "path": "aseprite_mcp/tools/pixel_read.py",
+      "line": 81,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "read_export_or_indirect_command; inspect before migration",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_error_propagation.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "get_composite_pixel",
+      "group": "pixel_read",
+      "path": "aseprite_mcp/tools/pixel_read.py",
+      "line": 179,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "read_export_or_indirect_command; inspect before migration",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_composite_read.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "get_composite_rect",
+      "group": "pixel_read",
+      "path": "aseprite_mcp/tools/pixel_read.py",
+      "line": 228,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "read_export_or_indirect_command; inspect before migration",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_composite_read.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "start_preview_server",
+      "group": "preview",
+      "path": "aseprite_mcp/tools/preview.py",
+      "line": 27,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "do_not_migrate",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "read_export_or_indirect_command; inspect before migration",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "stop_preview_server",
+      "group": "preview",
+      "path": "aseprite_mcp/tools/preview.py",
+      "line": 61,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "do_not_migrate",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "read_export_or_indirect_command; inspect before migration",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "ensure_layers_present",
+      "group": "quality",
+      "path": "aseprite_mcp/tools/quality.py",
+      "line": 57,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_error_propagation.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "validate_scene",
+      "group": "quality",
+      "path": "aseprite_mcp/tools/quality.py",
+      "line": 128,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "read_export_or_indirect_command; inspect before migration",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "audit_animation",
+      "group": "quality",
+      "path": "aseprite_mcp/tools/quality.py",
+      "line": 214,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "read_export_or_indirect_command; inspect before migration",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "animation_sanitize",
+      "group": "quality",
+      "path": "aseprite_mcp/tools/quality.py",
+      "line": 450,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "copy_layers_between_sprites",
+      "group": "scene",
+      "path": "aseprite_mcp/tools/scene.py",
+      "line": 8,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_error_propagation.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "run_lua_script",
+      "group": "script",
+      "path": "aseprite_mcp/tools/script.py",
+      "line": 7,
+      "cli": "opt_in_raw_lua",
+      "live": "out_of_scope",
+      "migration": "do_not_migrate",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_script.py",
+        "tests/test_server.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "move_region",
+      "group": "selection",
+      "path": "aseprite_mcp/tools/selection.py",
+      "line": 15,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_selection.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "copy_region",
+      "group": "selection",
+      "path": "aseprite_mcp/tools/selection.py",
+      "line": 106,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_selection.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "erase_region",
+      "group": "selection",
+      "path": "aseprite_mcp/tools/selection.py",
+      "line": 208,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_selection.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "erase_color",
+      "group": "selection",
+      "path": "aseprite_mcp/tools/selection.py",
+      "line": 273,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_selection.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "create_slice",
+      "group": "slices",
+      "path": "aseprite_mcp/tools/slices.py",
+      "line": 17,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_slices.py",
+        "tests/test_slices_pipe.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "set_slice_center",
+      "group": "slices",
+      "path": "aseprite_mcp/tools/slices.py",
+      "line": 66,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_slices.py",
+        "tests/test_slices_pipe.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "set_slice_pivot",
+      "group": "slices",
+      "path": "aseprite_mcp/tools/slices.py",
+      "line": 116,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_slices.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "list_slices",
+      "group": "slices",
+      "path": "aseprite_mcp/tools/slices.py",
+      "line": 152,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "read_export_or_indirect_command; inspect before migration",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_slices.py",
+        "tests/test_slices_pipe.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "delete_slice",
+      "group": "slices",
+      "path": "aseprite_mcp/tools/slices.py",
+      "line": 198,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_slices.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "list_text_fonts",
+      "group": "text",
+      "path": "aseprite_mcp/tools/text.py",
+      "line": 52,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "read_export_or_indirect_command; inspect before migration",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_text.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "measure_text",
+      "group": "text",
+      "path": "aseprite_mcp/tools/text.py",
+      "line": 80,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "read_export_or_indirect_command; inspect before migration",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_text.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "draw_text",
+      "group": "text",
+      "path": "aseprite_mcp/tools/text.py",
+      "line": 120,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_text.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "create_tilemap_layer",
+      "group": "tilemap",
+      "path": "aseprite_mcp/tools/tilemap.py",
+      "line": 25,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_group_layers.py",
+        "tests/test_tilemap.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "draw_on_tile",
+      "group": "tilemap",
+      "path": "aseprite_mcp/tools/tilemap.py",
+      "line": 83,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_tilemap.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "set_tiles",
+      "group": "tilemap",
+      "path": "aseprite_mcp/tools/tilemap.py",
+      "line": 166,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_tilemap.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "get_tile_at",
+      "group": "tilemap",
+      "path": "aseprite_mcp/tools/tilemap.py",
+      "line": 268,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "read_export_or_indirect_command; inspect before migration",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_tilemap.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "get_tilemap_info",
+      "group": "tilemap",
+      "path": "aseprite_mcp/tools/tilemap.py",
+      "line": 329,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "read_export_or_indirect_command; inspect before migration",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_tilemap.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "flip_layer",
+      "group": "transform",
+      "path": "aseprite_mcp/tools/transform.py",
+      "line": 8,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_error_propagation.py",
+        "tests/test_group_layers.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "rotate_layer",
+      "group": "transform",
+      "path": "aseprite_mcp/tools/transform.py",
+      "line": 80,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "resize_canvas",
+      "group": "transform",
+      "path": "aseprite_mcp/tools/transform.py",
+      "line": 175,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    },
+    {
+      "name": "crop_canvas",
+      "group": "transform",
+      "path": "aseprite_mcp/tools/transform.py",
+      "line": 207,
+      "cli": "enabled",
+      "live": "out_of_scope",
+      "migration": "decouple",
+      "minimum_api": "28 verified baseline; earlier minimum unverified",
+      "active_state": "CLI isolated activeSprite; names/active layer/frame must become explicit live IDs",
+      "save_effect": "source_save_or_new_file",
+      "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
+      "tests": [
+        "tests/test_error_propagation.py"
+      ],
+      "simulation": "not evidence of live support",
+      "real_live": "not executed",
+      "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    }
+  ]
+}
