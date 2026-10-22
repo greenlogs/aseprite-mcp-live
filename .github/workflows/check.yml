@@ -9,6 +9,8 @@ jobs:
         with:
           version: '0.12.3'
       - run: uv sync --locked --python 3.13
+      - name: Prepare test workspace
+        run: New-Item -ItemType Directory -Force -Path .work | Out-Null
       - name: Contracts and injected failures (no Aseprite)
         run: uv run --locked pytest -q tests/test_protocol.py tests/test_auto_connection.py tests/test_reliability.py tests/test_live_bridge.py tests/test_live_animation.py tests/test_cli_backend.py tests/test_server.py -m "not real" -k "not real_cli" --basetemp=.work/ci --junitxml=.work/ci.xml
       - run: uv run --locked python scripts/check_docs.py

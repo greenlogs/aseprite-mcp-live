@@ -48,3 +48,5 @@
 - [x] [PACK-M1 · 精简分发清单与首次推送](docs/progress/PACK-M1.md)
 
 - [x] [PACK-M2 · 0.4.1 TestPyPI发布](docs/progress/PACK-M2.md)
+
+- [x] [PACK-M3 · 修复干净检出 CI 临时目录](docs/progress/PACK-M3.md)

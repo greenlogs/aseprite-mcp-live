@@ -1,6 +1,6 @@
 # 动态项目结构
 
-最近复核：2026-10-22，PACK-M1 分发白名单与首次推送。结构说明唯一来源；实际与规划分开。
+最近复核：2026-10-22，PACK-M3 干净检出 CI 临时目录修复。结构说明唯一来源；实际与规划分开。
 
 ## 实际结构
 
@@ -11,7 +11,7 @@ aseprite-mcp/
 ├─ .work/                    隔离 Python/安装环境、验收日志/XML、P1/P2 图片、release 候选和清理记录，忽略
 ├─ .venv/                    uv 项目环境，忽略
 ├─ 根目录早期测试画布/图像    以 .gitignore 精确规则忽略，保留本地文件
-├─ .github/workflows/check.yml Windows 契约/文档/打包 CI，无 GUI 或自动发布步骤
+├─ .github/workflows/check.yml Windows 契约/文档/打包 CI，测试前创建 .work，无 GUI 或自动发布步骤
 ├─ scripts/
 │  ├─ build_release.py      uv 构建、确定性扩展 ZIP、生产依赖及分发清单校验
 │  ├─ check_capabilities.py 逐工具兼容矩阵与实际注册核对
@@ -110,7 +110,7 @@ aseprite-mcp/
 
 ## 规划结构：尚未实现
 
-基础动画已建立；其余高级能力为P3清单明确的后续范围；远程发布入口未建立且不自动执行。scripts 与 Windows CI 配置已建立，远程 CI 未执行。
+基础动画已建立；其余高级能力为P3清单明确的后续范围；远程发布入口未建立且不自动执行。scripts 与 Windows CI 配置已建立；下载日志确认远程 CI 已运行并因缺少 .work 失败，PACK-M3 本地修复验证通过，远程重跑待执行。
 
 ## 复核记录与更新规则
 
@@ -146,3 +146,5 @@ P2-M4验收复核：197项全量、61项无软件检查、真实无文件读取/
 2026-10-22 PACK-M1：源码分发改为运行源码、Lua扩展、build_release.py、构建/锁文件、环境样例、README及MIT许可白名单。wheel/sdist/扩展统一拒绝docs、提示词、AGENTS/SKILL、执行计划和CONTRIBUTING；测试、CI及其他开发脚本不进入源码分发，完整开发测试从Git仓库运行。新增PACK.md/PACK-M1.md分发维护交接；origin为git@github.com:greenlogs/aseprite-mcp-live.git。仓库中的维护文档仍保留。
 
 2026-10-22 PACK-M2：服务/扩展/握手/样例统一0.4.1，新增PACK-M2发布交接；当前产物在dist，wheel和sdist已发布TestPyPI并核对公开SHA256，扩展包仍在本地。无产品目录/职责或启动入口变化，保持PACK-M1分发排除规则。
+
+2026-10-22 PACK-M3：check.yml 在 pytest 前创建被忽略的 .work 父目录；TESTING 同步手工复现步骤。新增 PACK-M3 交接并同步分发维护总结和根计划；无产品目录、公共接口或依赖变化。本地干净副本71项检查及文档/能力/打包通过，远程修复重跑未执行。

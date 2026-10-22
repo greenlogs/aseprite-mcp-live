@@ -33,9 +33,13 @@ uv run --locked pytest -q --basetemp=.work/pytest --junitxml=.work/tests.xml
 
 ## 无Aseprite的CI检查
 
+全新检出不包含被忽略的 `.work/`。运行 pytest 前先创建该父目录；pytest 只创建 `--basetemp` 指定的末级目录，JUnit XML 在测试结束时创建目录也无法补救夹具初始化失败。
+
 ```powershell
+New-Item -ItemType Directory -Force -Path .work | Out-Null
 uv run --locked pytest -q tests/test_protocol.py tests/test_auto_connection.py tests/test_reliability.py tests/test_live_bridge.py tests/test_live_animation.py tests/test_cli_backend.py tests/test_server.py -m "not real" -k "not real_cli" --basetemp=.work/ci
 uv run --locked python scripts/check_docs.py
+uv run --locked python scripts/check_capabilities.py
 uv run --locked python scripts/build_release.py --out-dir dist
 ```
 
