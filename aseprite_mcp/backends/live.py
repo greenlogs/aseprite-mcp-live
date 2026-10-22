@@ -11,14 +11,14 @@ from websockets.asyncio.server import serve
 from websockets.exceptions import ConnectionClosed
 
 from ..core.protocol import (
-    BackendError, CORE_CAPABILITIES, ErrorCode, Handshake, Request, Result, SERVICE_VERSION, Welcome, failure,
+    BackendError, LIVE_CAPABILITIES, ErrorCode, Handshake, Request, Result, SERVICE_VERSION, Welcome, failure,
 )
 
 log = logging.getLogger(__name__)
 
 
 class LiveBackend:
-    capabilities = CORE_CAPABILITIES
+    capabilities = LIVE_CAPABILITIES
 
     def __init__(self, socket):
         self.socket = socket
@@ -54,6 +54,7 @@ class LiveBridge:
                 "service_version": SERVICE_VERSION, "extension_version": hello.extension_version if hello else None,
                 "connection_mode": "direct", "authentication": "none",
                 "protocol_version": 1, "capabilities": sorted(self.executor.live_capabilities),
+                "enabled_capability_sets": sorted(self.executor.capability_sets),
                 "aseprite_version": hello.aseprite_version if hello else None,
                 "api_version": hello.api_version if hello else None,
                 "url": self.url}

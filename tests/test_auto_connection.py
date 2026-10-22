@@ -15,7 +15,7 @@ from aseprite_mcp.core.execution import Executor
 from aseprite_mcp.core.protocol import Handshake
 from websockets.exceptions import InvalidStatus
 from conftest import run
-from live_support import editor_process, until
+from live_support import live_port, editor_process, until
 
 
 def test_cli_overrides_env_and_defaults(monkeypatch):
@@ -50,7 +50,7 @@ def test_direct_connection_without_file_access(tmp_path, monkeypatch):
     monkeypatch.setenv("ASEPRITE_MCP_RUNTIME_DIR", str(forbidden))
     async def scenario():
         executor = Executor(None)
-        bridge = LiveBridge(executor, RuntimeConfig())
+        bridge = LiveBridge(executor, RuntimeConfig(port=live_port()))
         async with bridge.lifespan():
             assert bridge.status()["connection_mode"] == "direct"
             assert bridge.status()["authentication"] == "none"
@@ -66,7 +66,7 @@ def test_direct_connection_without_file_access(tmp_path, monkeypatch):
 
 def test_browser_origin_rejected_native_loopback_allowed():
     async def scenario():
-        bridge = LiveBridge(Executor(None), RuntimeConfig())
+        bridge = LiveBridge(Executor(None), RuntimeConfig(port=live_port()))
         async with bridge.lifespan():
             for origin in ("https://example.com", "http://localhost", "null"):
                 with pytest.raises(InvalidStatus) as error:
@@ -106,7 +106,7 @@ def test_real_stdio_force_kill_restart_without_selecting_file(tmp_path, monkeypa
     from mcp.client.stdio import stdio_client
     import gc
     async def scenario():
-        env = dict(os.environ, ASEPRITE_MCP_TOOL_PROFILE="core", ASEPRITE_MCP_HOST="127.0.0.1", ASEPRITE_MCP_PORT="8765")
+        env = dict(os.environ, ASEPRITE_MCP_TOOL_PROFILE="core", ASEPRITE_MCP_HOST="127.0.0.1", ASEPRITE_MCP_PORT=str(live_port()))
         params = StdioServerParameters(command=sys.executable, args=["-m", "aseprite_mcp"], env=env)
         async def connected(client):
             async with asyncio.timeout(20):
@@ -145,7 +145,7 @@ def test_real_editor_automatic_start_restart_stop_and_custom_port(tmp_path, monk
         monkeypatch.setenv("ASEPRITE_MCP_RUNTIME_DIR", str(forbidden))
         monkeypatch.setenv("ASEPRITE_MCP_CONNECTION_FILE", str(forbidden / "connection.json"))
         executor = Executor(None)
-        first = LiveBridge(executor, RuntimeConfig())
+        first = LiveBridge(executor, RuntimeConfig(port=live_port()))
         # Start the editor before any service. No config file or connect() call.
         async with editor_process(tmp_path) as manual:
             # Give only production bridge.lua a filesystem-denying environment.
@@ -175,7 +175,7 @@ return true
                 assert await manual('__aseprite_mcp_live:settings();__aseprite_mcp_live.dialog:close();return __aseprite_mcp_live.legacy_settings==nil')
             assert executor.live is None
             # Server restart keeps the endpoint; the editor reconnects without reading files.
-            second = LiveBridge(executor, RuntimeConfig())
+            second = LiveBridge(executor, RuntimeConfig(port=live_port()))
             async with second.lifespan():
                 await until(lambda: executor.session_id not in (None, session))
                 assert (await executor.execute(raw)).error.code == "SESSION_MISMATCH"

@@ -4,7 +4,7 @@
 
 ## 上游与版本证据
 
-导入仍为 `90d1696a7e41edff89bbd0823ae6a5f86c114bcc`，116 项；GitHub HEAD API 实查为 [`a89b205bed31930ee141edf319e78c71ef16bba6`](https://github.com/diivi/aseprite-mcp/tree/a89b205bed31930ee141edf319e78c71ef16bba6)，提交时间 2026-10-21T23:55:48Z，固定归档 SHA256 `e55499e1a8c7d82ea09a0e9e642f73c6d120eb3a7054b55a06921d366ecbb5b7`。实际源码装饰器为 123 项，无删除/更名，新增 draw_rows/read_rows/draw_iso_box/view_sprite/export_animation/get_bounds/lint_sprite。两份 LICENSE 均为 MIT、原版权保留；没有升级或复制新工具。复核不以 README 工具数代替源码。
+导入仍为 `90d1696a7e41edff89bbd0823ae6a5f86c114bcc`，116 项；GitHub HEAD API 实查为 [`a89b205bed31930ee141edf319e78c71ef16bba6`](https://github.com/diivi/aseprite-mcp/tree/a89b205bed31930ee141edf319e78c71ef16bba6)，提交时间 2026-10-21T23:55:48Z，固定归档 SHA256 `e55499e1a8c7d82ea09a0e9e642f73c6d120eb3a7054b55a06921d366ecbb5b7`。实际源码装饰器为 123 项，无删除/更名，新增 draw_rows/read_rows/draw_iso_box/view_sprite/export_animation/get_bounds/lint_sprite。两份 LICENSE 均为 MIT、原版权保留；没有升级或复制新工具。另对固定基线/新快照函数AST作差异，既有 animation_workflow_guide、compare_frames、export_frame、outline_cel、run_lua_script 有变更，未合并；细目在矩阵 upstream_review.changed_existing_tools。复核不以 README 工具数代替源码。
 
 已验证最低产品基线为 Aseprite 1.3.7/API28；未调查更早版本，矩阵不捏造历史最低 API。官方 [Sprite](https://www.aseprite.org/api/sprite)、[Frame](https://www.aseprite.org/api/frame)、[Tag](https://www.aseprite.org/api/tag)、[版本变化](https://www.aseprite.org/api/Changes) 用于定位，真实 API28 测试与运行时探测决定是否支持。
 
@@ -34,8 +34,8 @@
 - 显式设置 `ASEPRITE_MCP_CAPABILITY_SETS=animation` 才注册 `apply_animation`；默认 core 9 项不变，cli/all 旧工具名及文件语义不变。握手另协商 apply_animation；未协商返回 UNSUPPORTED_CAPABILITY，不降级。
 - 输入沿用 session_id/document_id/expected_revision/可选 expected_context/request_id；operations 为非空有界数组。帧号从 1 开始、时长整数毫秒 1–65535；标签名非空且唯一，按精确名称定位，遇到文档中重复同名标签拒绝。
 - `add_frames(count,duration_ms=100)`：在末尾逐帧复制最后一帧，最多总计 256 帧；`delete_frame(frame)`：不得删唯一帧；`set_frame_duration(from_frame,to_frame,duration_ms)`：闭区间；`set_tag(tag,from_frame,to_frame,direction)` 创建或更新，四种正向/反向/乒乓方向；`delete_tag(tag)` 缺失拒绝。
-- 操作按顺序解释，先模拟所有帧数/标签范围再执行；帧变化后的标签重排沿用原生 Aseprite。整批一个事务、失败回滚、CPU/复制像素预算保护；RGB 普通可编辑层为首批边界，组内普通层允许，锁层/背景/参考/Tilemap/非RGB拒绝。缺 Cel 保持空，偏移与关联 Cel 使用原生 newFrame/deleteFrame 行为；真实测试须检查独立历史与原像素。
+- 操作按顺序解释，先模拟所有帧数/标签范围再执行；帧变化后的标签重排沿用原生 Aseprite；原生删帧导致后续标签操作失效时整批回滚。整批一个事务、失败回滚、CPU/复制像素预算保护；RGB 普通可编辑层为首批边界，组内普通层允许，锁层/背景/参考/Tilemap/非RGB拒绝。缺 Cel 保持空，偏移与关联 Cel 使用原生 newFrame/deleteFrame 行为；真实测试须检查独立历史与原像素。
 - get_document_info 增补 tags 与整数 frame_durations_ms，原 frame_durations 秒保留。输出 operations 数和刷新后的动画元数据；不自动保存、不改变用户选择的其他文档。CLI 继续走原工具，公共 cli_execute 不支持 apply_animation。
 - 正常效果、每种错误、整批无部分写入、一次撤销/重做、各帧 PNG、显式保存后 CLI 读回、未启用与协商不支持、超时 RESULT_UNKNOWN、核心编辑组合都须验证。真实 GUI 使用独立配置/进程，不触碰个人编辑器；模拟测试单列。
 
-接口为协议 v1 的可选增量，核心字段/帧号不变。服务和扩展配套版本将升为 0.4.0，旧配套因版本校验明确拒绝；最低软件版本保持 API28。实现及验收事实见 P3-M2 交接，未完成前不能声明实时支持。
+接口为协议 v1 的可选增量，核心字段/帧号不变。服务和扩展配套版本为 0.4.0，旧配套因版本校验明确拒绝；最低软件版本保持 API28。基础动画已在Windows Aseprite1.3.7/API28真实验收，208项完整回归通过；实现及验收事实见 [P3-M2交接](../progress/P3-M2.md)。

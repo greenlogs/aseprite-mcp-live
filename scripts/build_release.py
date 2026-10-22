@@ -9,7 +9,7 @@ import tomllib
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
-EXTENSION_FILES = ("package.json", "main.lua", "bridge.lua", "editor.lua", "preview.lua")
+EXTENSION_FILES = ("package.json", "main.lua", "bridge.lua", "editor.lua", "preview.lua", "animation.lua")
 
 
 def version():

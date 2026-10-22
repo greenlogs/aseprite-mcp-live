@@ -49,7 +49,7 @@ def create_server(profile: str | None = None, *, config: RuntimeConfig | None = 
     if profile not in {"core", "cli", "all"}:
         raise ValueError("ASEPRITE_MCP_TOOL_PROFILE must be core, cli or all")
     config = config or RuntimeConfig.from_env()
-    executor = Executor(CliBackend(config.limits), config.limits)
+    executor = Executor(CliBackend(config.limits), config.limits, capability_sets=config.capability_sets)
     bridge = LiveBridge(executor, config)
 
     @asynccontextmanager
@@ -77,7 +77,7 @@ def create_server(profile: str | None = None, *, config: RuntimeConfig | None = 
     if profile in {"core", "all"}:
         @server.tool()
         async def get_connection_status() -> dict:
-            """读取实时会话、软件版本及本机连接配置文件位置。"""
+            """读取实时会话、软件版本、本机端点及已启用能力集。"""
             return bridge.status()
 
         @server.tool()
@@ -103,6 +103,15 @@ def create_server(profile: str | None = None, *, config: RuntimeConfig | None = 
             """在指定修订执行原子批次；操作格式见协议 v1。"""
             return await dispatch({"name": "apply_operations", "operations": operations}, session_id,
                                   document_id, expected_revision, expected_context, request_id)
+
+        if "animation" in config.capability_sets:
+            @server.tool()
+            async def apply_animation(session_id: str, document_id: str, expected_revision: int,
+                                      operations: list[dict], expected_context: int | None = None,
+                                      request_id: str | None = None) -> dict:
+                """原子编辑基础动画：add_frames/delete_frame/set_frame_duration/set_tag/delete_tag；帧号从1开始，时长毫秒，不自动保存。"""
+                return await dispatch({"name": "apply_animation", "operations": operations}, session_id,
+                                      document_id, expected_revision, expected_context, request_id)
 
         @server.tool()
         async def get_preview(session_id: str, document_id: str, expected_revision: int,

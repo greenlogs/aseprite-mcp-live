@@ -11,6 +11,11 @@ import subprocess
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def live_port():
+    """Allow isolation from a user's running service without changing product defaults."""
+    return int(os.getenv("ASEPRITE_MCP_TEST_PORT", "8765"))
+
+
 async def until(predicate, timeout=15):
     async with asyncio.timeout(timeout):
         while not predicate():

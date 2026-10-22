@@ -1,6 +1,6 @@
 # 动态项目结构
 
-最近复核：2026-10-22，P2-M4 无文件直连。结构说明唯一来源；实际与规划分开。
+最近复核：2026-10-22，P3-M2 基础动画与阶段集成。结构说明唯一来源；实际与规划分开。
 
 ## 实际结构
 
@@ -40,11 +40,12 @@ aseprite-mcp/
 │  │  └─ cli.lua             固定磁盘读取及批量普通 RGB 图层编辑脚本
 │  └─ tools/                 20 个上游 CLI 工具模块及 __init__.py，原名/参数保留
 ├─ extension/
-│  ├─ package.json           注册 main.lua 的 0.3.0 发布扩展清单
+│  ├─ package.json           注册 main.lua 的 0.4.0 发布扩展清单
 │  ├─ NOTICE.md              扩展包上游固定提交与许可归属
 │  ├─ main.lua               init/exit、延迟自动连接、菜单与重载清理
 │  ├─ bridge.lua             地址/端口设置、直接连接/重连/停止、握手与编辑端去重；无选文件UI
 │  ├─ editor.lua             文档/图层注册、事件修订、事务/历史与保存
+│  ├─ animation.lua          可选基础动画、元数据指纹、预算及顺序预校验
 │  └─ preview.lua            独立 Image 合成与内存 PNG/base64 编码
 ├─ tests/
 │  ├─ conftest.py            平台临时目录和每模块画布夹具
@@ -55,6 +56,7 @@ aseprite-mcp/
 │  ├─ test_cli_backend.py    真实 CLI 纵向路径与进程/产物故障模拟
 │  ├─ live_support.py        独立 UI 进程与仅测试使用的手工动作控制夹具
 │  ├─ test_live_preview.py   真实 MCP 图片/阶段集成与真实上限拒绝
+│  ├─ test_live_animation.py 可选能力契约与真实MCP/UI/CLI/关联Cel/历史回归
 │  ├─ test_live_editor.py    真实文档、Cel、事务回滚、历史与保存
 │  ├─ test_live_bridge.py    真实 socket 模拟编辑器及真实 UI 扩展生命周期
 │  ├─ test_server.py         工具配置、真实 stdio 及 MCP→真实 CLI 读取
@@ -91,7 +93,7 @@ aseprite-mcp/
    └─ progress/              P0～P3 阶段总结、P0/P1/P2 各模块交接报告
 ```
 
-依赖方向：`__main__` → `server` → Request / Executor → CliBackend → commands / 固定 Lua → Aseprite CLI。旧兼容工具 → 共享算法/commands，尚未全部迁移到 Executor。live Backend 已实现同一 Backend 协议，通过 WebSocket 接入扩展；当前协商八种文档/事务/图片动作。协议层不导入工具或后端。
+依赖方向：`__main__` → `server` → Request / Executor → CliBackend → commands / 固定 Lua → Aseprite CLI。旧兼容工具 → 共享算法/commands，尚未全部迁移到 Executor。live Backend 已实现同一 Backend 协议，通过 WebSocket 接入扩展；默认协商八种文档/事务/图片动作，可显式增加apply_animation。协议层不导入工具或后端。
 
 ## 当前入口
 
@@ -104,11 +106,11 @@ aseprite-mcp/
 | 公共 CLI 路径 | Python Executor.execute(JSON) 或 CLI 配置的 MCP cli_execute |
 | 构建 | `uv run --locked python scripts/build_release.py --out-dir dist`；wheel/sdist/扩展/锁定依赖/摘要 |
 | 扩展加载 | `.aseprite-extension` 安装或解压至配置 extensions/aseprite-mcp-live；main.lua init/exit；默认直接连接 127.0.0.1:8765，设置可改端口 |
-| 下一模块 | [P3-M1](development/prompts/P3-高级能力迁移.md#p3-m1)，尚未开始 |
+| 维护入口 | [兼容清单](development/CAPABILITIES.md)，P3基础动画完成后评估下一独立批次 |
 
 ## 规划结构：尚未实现
 
-高级能力按 P3 清单迁移；远程发布入口未建立且不自动执行。scripts 与 Windows CI 配置已建立，远程 CI 未执行。
+基础动画已建立；其余高级能力为P3清单明确的后续范围；远程发布入口未建立且不自动执行。scripts 与 Windows CI 配置已建立，远程 CI 未执行。
 
 ## 复核记录与更新规则
 
@@ -138,3 +140,5 @@ P2-M3 验收复核：197项全量、61项无软件检查、真实强杀重启自
 P2-M4验收复核：197项全量、61项无软件检查、真实无文件读取/强杀重启/独立安装和客户端图片显示通过。当前候选.work/release-direct，证据.work/direct-evidence；0.3.0未发布。
 
 2026-10-22 P3-M1：新增兼容说明、逐工具 JSON 矩阵和 check_capabilities.py；116 项与实际 CLI 注册逐项一致，冻结基础动画批次，无产品能力变化。
+
+2026-10-22 P3-M2：新增animation.lua与test_live_animation.py；config/protocol/server/live新增可选animation能力集，editor补时间轴指纹与删除帧上下文恢复。打包纳入第五个Lua，verify_install支持--port/--animation；实时测试夹具支持独立测试端口，CI纳入动画契约与矩阵校验。

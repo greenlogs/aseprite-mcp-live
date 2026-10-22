@@ -512,7 +512,14 @@
       "view_sprite"
     ],
     "removed": [],
-    "license": "MIT License\n\nCopyright (c) 2024 Divyansh Singh\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE. "
+    "license": "MIT License\n\nCopyright (c) 2024 Divyansh Singh\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE. ",
+    "changed_existing_tools": [
+      "animation_workflow_guide",
+      "compare_frames",
+      "export_frame",
+      "outline_cel",
+      "run_lua_script"
+    ]
   },
   "phase_scope": {
     "module": "P3-M2",
@@ -601,8 +608,8 @@
         "tests/test_animation.py",
         "tests/test_export.py"
       ],
-      "simulation": "not evidence of live support",
-      "real_live": "P3-M2 pending",
+      "simulation": "strict schema, opt-in, negotiation, limits and unknown write receipt tested",
+      "real_live": "Windows Aseprite1.3.7/API28; tests/test_live_animation.py accepted; see docs/progress/P3-M2.md",
       "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
     },
     {
@@ -618,8 +625,8 @@
       "save_effect": "source_save_or_new_file",
       "undo": "CLI process transaction is not editor history; live migration needs one atomic transaction",
       "tests": [],
-      "simulation": "not evidence of live support",
-      "real_live": "P3-M2 pending",
+      "simulation": "strict schema, opt-in, negotiation, limits and unknown write receipt tested",
+      "real_live": "Windows Aseprite1.3.7/API28; tests/test_live_animation.py accepted; see docs/progress/P3-M2.md",
       "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
     },
     {
@@ -851,8 +858,8 @@
         "tests/test_error_propagation.py",
         "tests/test_export.py"
       ],
-      "simulation": "not evidence of live support",
-      "real_live": "P3-M2 pending",
+      "simulation": "strict schema, opt-in, negotiation, limits and unknown write receipt tested",
+      "real_live": "Windows Aseprite1.3.7/API28; tests/test_live_animation.py accepted; see docs/progress/P3-M2.md",
       "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
     },
     {
@@ -972,8 +979,8 @@
       "tests": [
         "tests/test_animation.py"
       ],
-      "simulation": "not evidence of live support",
-      "real_live": "P3-M2 pending",
+      "simulation": "strict schema, opt-in, negotiation, limits and unknown write receipt tested",
+      "real_live": "Windows Aseprite1.3.7/API28; tests/test_live_animation.py accepted; see docs/progress/P3-M2.md",
       "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
     },
     {
@@ -991,8 +998,8 @@
       "tests": [
         "tests/test_animation.py"
       ],
-      "simulation": "not evidence of live support",
-      "real_live": "P3-M2 pending",
+      "simulation": "strict schema, opt-in, negotiation, limits and unknown write receipt tested",
+      "real_live": "Windows Aseprite1.3.7/API28; tests/test_live_animation.py accepted; see docs/progress/P3-M2.md",
       "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
     },
     {
@@ -1136,8 +1143,8 @@
       "tests": [
         "tests/test_error_propagation.py"
       ],
-      "simulation": "not evidence of live support",
-      "real_live": "P3-M2 pending",
+      "simulation": "strict schema, opt-in, negotiation, limits and unknown write receipt tested",
+      "real_live": "Windows Aseprite1.3.7/API28; tests/test_live_animation.py accepted; see docs/progress/P3-M2.md",
       "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
     },
     {
@@ -2719,6 +2726,26 @@
       "simulation": "not evidence of live support",
       "real_live": "not executed",
       "license": "MIT; imported 90d1696a7e41edff89bbd0823ae6a5f86c114bcc"
+    }
+  ],
+  "live_capabilities": [
+    {
+      "name": "apply_animation",
+      "capability_set": "animation",
+      "operations": [
+        "add_frames",
+        "delete_frame",
+        "set_frame_duration",
+        "set_tag",
+        "delete_tag"
+      ],
+      "path": "extension/animation.lua",
+      "entry": "aseprite_mcp/server.py",
+      "real_test": "tests/test_live_animation.py",
+      "minimum_api": 28,
+      "save_effect": "none; explicit save_sprite only",
+      "undo": "one transaction; undo/redo verified",
+      "status": "accepted Windows Aseprite1.3.7/API28"
     }
   ]
 }

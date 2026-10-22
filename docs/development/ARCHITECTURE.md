@@ -1,6 +1,6 @@
 # 架构与接口边界
 
-当前版本0.3.0；Windows Aseprite1.3.7/API28基线。采用Python3.13+、uv、MCP stdio与Lua扩展；上游来源和许可见[THIRD_PARTY](../THIRD_PARTY.md)。P2-M4用户更正要求明确：连接不能依赖JSON文件，且扩展不能提供选文件入口。
+当前版本0.4.0；Windows Aseprite1.3.7/API28基线。采用Python3.13+、uv、MCP stdio与Lua扩展；上游来源和许可见[THIRD_PARTY](../THIRD_PARTY.md)。P2-M4用户更正要求明确：连接不能依赖JSON文件，且扩展不能提供选文件入口。
 
 ## 依赖与职责
 
@@ -48,3 +48,11 @@ CLI/旧MCP工具在线程运行，共享有限期路径锁；subprocess.run超�
 业务Request/Result保持v1；0.3.0 hello移除token，旧扩展须配套升级。公开字段、预算与兼容见[PROTOCOL](PROTOCOL.md)。历史P0/P1及0.1/0.2连接方案只记录在交接，不是当前架构。
 
 hatch构建服务wheel/资源，sdist白名单；构建器核对服务/扩展清单/Lua握手版本，生成扩展ZIP、锁定生产依赖和摘要，不分发Aseprite/配置/会话。CI只跑无软件契约/文档/构建，真实UI及安装客户端显示单独验收；不自动推送或发布。
+
+## P3 已采用决策（2026-10-22）
+
+基础动画采用独立apply_animation动作和animation能力集；默认关闭，通过配置、MCP注册、握手交集与扩展执行四处约束。业务协议v1兼容增量，版本配套0.4.0、最低API28不变；旧CLI原名与磁盘自动保存语义保留。
+
+新animation.lua独立提供元数据/时间轴指纹、顺序预校验与原生帧/标签算法；editor.lua沿用修订、上下文、单事务、历史和预览。不把旧CLI的saveAs/activeSprite/名称图层假设搬入实时。时间轴指纹弥补API28部分元数据事件差异，计数可跳增。删除活动帧后恢复存活帧，防止提交后恢复死Frame句柄造成假失败。
+
+首批限制RGB普通可编辑层、总256帧、已有复制/CPU预算；偏移/缺Cel/关联Cel通过真实文件验证。调色板/特效/Tilemap/补间仍在[后续范围](CAPABILITIES.md)，上游123项复核不代表升级或全部实时可用。

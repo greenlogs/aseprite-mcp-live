@@ -71,3 +71,7 @@ Windows NT 10.0.26200.0、uv 0.12.3、Python 3.13.15、MCP SDK 1.6.0、Aseprite 
 ## 无文件直连复核（2026-10-22）
 
 0.3.0服务/扩展，业务协议v1，Windows Aseprite1.3.7/API28；197项完整回归通过。SDK1.6.0独立安装/图片链路与Edge155.0.4283.62显示通过。真实API28 ixwebsocket发送目标ws://Origin，服务据此适配；强杀半开socket以内存心跳恢复。产品连接不再使用JSON文件或共享token，细节见[P2-M4](progress/P2-M4.md)。软件路径仍仅见本文件前表。
+
+## P3实际环境复核（2026-10-22）
+
+Windows、Python3.13.15、uv0.12.3、MCP SDK1.6.0、Aseprite1.3.7/API28，依赖沿用已锁版本。0.4.0/协议v1、208项全量、71项无软件检查、基础动画/关联Cel/核心/CLI真实组合通过；独立site-packages与ZIP安装通过。Edge155.0.4283.62实际渲染13张收到的PNG并目视核验。测试使用18765/18768独立端口，保留用户已有8765服务。官方newFrame(frameNumber)在所给位置插入，末尾复制采用不传参数形式，已用不同末帧像素验证；LinkCels命令要求时间轴焦点，改用本地生成的原生关联Cel文件作稳定夹具。没有复制Aseprite源码。详情见[P3-M2](progress/P3-M2.md)。

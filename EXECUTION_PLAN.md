@@ -6,7 +6,7 @@
 
 模块结束：按[交接模板](docs/development/MODULE_REPORT_TEMPLATE.md)生成 `docs/progress/<模块编号>.md`，同步阶段总结与本文件；涉及结构变化时同步[项目结构](docs/PROJECT_STRUCTURE.md)。已验收开发模块默认本地提交，不推送。阶段结束另做集成验收。
 
-当前任务：P3-M1 已验收，进入 [P3-M2 · 基础动画迁移](docs/development/prompts/P3-高级能力迁移.md#p3-m2)，范围见兼容清单。
+当前任务：P3 已验收；维护入口为 [兼容清单](docs/development/CAPABILITIES.md)与 [P3-M2交接](docs/progress/P3-M2.md)，后续能力需另行冻结批次。
 
 ## P0 · 项目基础
 
@@ -34,9 +34,9 @@
 
 ## P3 · 高级能力迁移
 
-提示词：[P3](docs/development/prompts/P3-高级能力迁移.md)。总结：116 项兼容矩阵和上游123项差异已核对，冻结基础动画一批，待 P3-M2 实现；[完整总结](docs/progress/P3.md)。
+提示词：[P3](docs/development/prompts/P3-高级能力迁移.md)。总结：116项矩阵、基础动画及核心/CLI组合已验收，208项回归和0.4.0隔离安装通过；[完整总结](docs/progress/P3.md)。
 
 - [x] [P3-M1 · 上游工具兼容清单](docs/development/prompts/P3-高级能力迁移.md#p3-m1)
-- [ ] [P3-M2 · 按能力组迁移与回归](docs/development/prompts/P3-高级能力迁移.md#p3-m2)
+- [x] [P3-M2 · 按能力组迁移与回归](docs/development/prompts/P3-高级能力迁移.md#p3-m2)
 
-首发交付点：P2。后续演进：P3 按复核后的能力清单分批迁移。P0/P1/P2 已验收，0.3.0无文件直连候选已验收但尚未发布；P0 基线已按用户授权初始化并入库，P1/P2 按模块本地提交；未进行软件分发或 GitHub 推送；首版不要求全部上游工具实时可用，也不承诺未验收平台。
+首发交付点：P2。后续演进：P3 按复核后的能力清单分批迁移。P0/P1/P2/P3 已验收，0.4.0基础动画候选已验收但尚未发布；P0 基线已按用户授权初始化并入库，P1/P2/P3 按模块本地提交；未进行软件分发或 GitHub 推送；首版不要求全部上游工具实时可用，也不承诺未验收平台。

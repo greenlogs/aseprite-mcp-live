@@ -12,6 +12,8 @@ sys.path.insert(0, str(ROOT))
 
 def check():
     from aseprite_mcp.server import create_server
+    from aseprite_mcp.core.config import RuntimeConfig
+    from aseprite_mcp.core.protocol import CAPABILITY_SETS
 
     matrix = json.loads((ROOT / "docs/development/tool-compatibility.json").read_text(encoding="utf-8"))
     records = matrix["tools"]
@@ -34,6 +36,12 @@ def check():
     try:
         names = {tool.name for tool in asyncio.run(create_server("cli").list_tools())}
         assert names - {"cli_execute"} == source_names - {"run_lua_script"}
+        base = {tool.name for tool in asyncio.run(create_server("core", config=RuntimeConfig()).list_tools())}
+        enabled = {tool.name for tool in asyncio.run(create_server("core", config=RuntimeConfig(
+            capability_sets=frozenset(CAPABILITY_SETS))).list_tools())}
+        reviewed = matrix["live_capabilities"]
+        assert {row["name"] for row in reviewed} == enabled - base == set().union(*CAPABILITY_SETS.values())
+        assert set(matrix["phase_scope"]["operations"]) == set(reviewed[0]["operations"])
     finally:
         if old is not None:
             os.environ["ASEPRITE_MCP_ENABLE_RAW_LUA"] = old

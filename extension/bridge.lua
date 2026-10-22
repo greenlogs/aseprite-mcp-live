@@ -1,6 +1,6 @@
 -- Aseprite 1.3.7 uses (message, data); do not require the newer error argument.
 local M = {}
-local EXTENSION_VERSION = "0.3.0"
+local EXTENSION_VERSION = "0.4.0"
 
 local function environment(name)
   local value=os.getenv(name)
@@ -74,6 +74,8 @@ function M.new(plugin)
         if Sprite and Image and app.events and app.transaction and app.undo and app.redo then
           capabilities={"list_documents","get_document_info","create_sprite","apply_operations","save_sprite","undo","redo"}
           if string.pack then capabilities[#capabilities+1]="get_preview" end
+          local animation=dofile(app.fs.joinPath(plugin.path,"animation.lua"))
+          if animation.available() then capabilities[#capabilities+1]="apply_animation" end
         end
         self.session=tostring(os.time()).."-"..tostring(math.random(1,2147483647)).."-"..tostring(generation)
         self.ws:sendText(json.encode{type="hello", protocol_version=1,
@@ -93,7 +95,10 @@ function M.new(plugin)
           end
           self.limits=message.limits
           local preview=string.pack and dofile(app.fs.joinPath(plugin.path,"preview.lua")) or nil
-          self.editor=dofile(app.fs.joinPath(plugin.path,"editor.lua")).new(self.limits,preview)
+          local animation=dofile(app.fs.joinPath(plugin.path,"animation.lua"))
+          local animation_enabled=false
+          for _,name in ipairs(message.capabilities) do if name=="apply_animation" then animation_enabled=true end end
+          self.editor=dofile(app.fs.joinPath(plugin.path,"editor.lua")).new(self.limits,preview,animation,animation_enabled)
           self.ready=true; self:set_status("Connected")
           return
         end

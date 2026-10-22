@@ -2,7 +2,7 @@
 import os
 from dataclasses import dataclass, field
 
-from .protocol import Limits
+from .protocol import CAPABILITY_SETS, Limits
 
 DEFAULT_PORT = 8765
 
@@ -12,10 +12,13 @@ class RuntimeConfig:
     host: str = "127.0.0.1"
     port: int = DEFAULT_PORT
     limits: Limits = field(default_factory=Limits)
+    capability_sets: frozenset[str] = frozenset()
 
     def __post_init__(self):
         if self.host not in {"127.0.0.1", "::1"} or not 1 <= self.port <= 65535:
             raise ValueError("Live endpoint must be a loopback address and valid port")
+        if self.capability_sets - CAPABILITY_SETS.keys():
+            raise ValueError("Unknown ASEPRITE_MCP_CAPABILITY_SETS; supported: animation")
 
     @classmethod
     def from_env(cls, *, host: str | None = None, port: int | None = None):
@@ -29,4 +32,5 @@ class RuntimeConfig:
             selected_host = "127.0.0.1"
         return cls(host=selected_host,
                    port=port if port is not None else int(os.getenv("ASEPRITE_MCP_PORT", str(DEFAULT_PORT))),
-                   limits=Limits(**values))
+                   limits=Limits(**values), capability_sets=frozenset(
+                       name.strip() for name in os.getenv("ASEPRITE_MCP_CAPABILITY_SETS", "").split(",") if name.strip()))

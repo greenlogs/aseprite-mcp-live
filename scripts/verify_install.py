@@ -26,12 +26,12 @@ async def until(predicate, timeout=20):
 
 
 @asynccontextmanager
-async def installed_editor(directory, extension_archive, aseprite):
+async def installed_editor(directory, extension_archive, aseprite, port=8765):
     user = directory / "profile"
     extension = user / "extensions/aseprite-mcp-live"
     extension.mkdir(parents=True)
     with zipfile.ZipFile(extension_archive) as archive:
-        assert set(archive.namelist()) == {"package.json", "main.lua", "bridge.lua", "editor.lua", "preview.lua", "LICENSE", "NOTICE.md"}
+        assert set(archive.namelist()) == {"package.json", "main.lua", "bridge.lua", "editor.lua", "preview.lua", "animation.lua", "LICENSE", "NOTICE.md"}
         archive.extractall(extension)
     boot, command_file = directory / "boot.lua", directory / "manual.lua"
     control, response = directory / "control.json", directory / "response.json"
@@ -78,7 +78,7 @@ end};test_timer:start()
         process = subprocess.Popen([str(aseprite), "--script-param", f"control={control}",
             "--script-param", f"response={response}",
             "--script", str(boot)], env=dict(os.environ, ASEPRITE_USER_FOLDER=str(user),
-                ASEPRITE_MCP_HOST="127.0.0.1", ASEPRITE_MCP_PORT="8765"),
+                ASEPRITE_MCP_HOST="127.0.0.1", ASEPRITE_MCP_PORT=str(port)),
             cwd=directory, startupinfo=startup, stdout=log, stderr=log)
         try:
             yield manual
@@ -92,13 +92,14 @@ end};test_timer:start()
                     await asyncio.to_thread(process.wait, 5)
 
 
-async def verify(python, extension, aseprite, directory):
+async def verify(python, extension, aseprite, directory, port=8765, animation=False):
     assert os.name == "nt", "This real GUI harness is validated on Windows only"
     directory.mkdir(parents=True, exist_ok=False)
     env = {key: value for key, value in os.environ.items() if key not in {"PYTHONPATH", "PYTHONHOME"}}
     env.update(ASEPRITE_PATH=str(aseprite), ASEPRITE_MCP_TOOL_PROFILE="all",
                ASEPRITE_MCP_ENABLE_RAW_LUA="0",
-               ASEPRITE_MCP_HOST="127.0.0.1", ASEPRITE_MCP_PORT="8765")
+               ASEPRITE_MCP_HOST="127.0.0.1", ASEPRITE_MCP_PORT=str(port),
+               ASEPRITE_MCP_CAPABILITY_SETS="animation" if animation else "")
     probe = subprocess.run([str(python), "-I", "-c", "import aseprite_mcp,json,sys;from importlib.metadata import version;print(json.dumps({'package':aseprite_mcp.__file__,'python':sys.version,'mcp':version('mcp'),'service':version('aseprite-mcp')}))"],
         env=env, cwd=directory, check=True, capture_output=True, text=True)
     versions = json.loads(probe.stdout)
@@ -112,8 +113,8 @@ async def verify(python, extension, aseprite, directory):
             await client.initialize()
             evidence["timings_ms"]["startup"] = (time.perf_counter() - started) * 1000
             tools = await client.list_tools()
-            assert len(tools.tools) == 125 and "run_lua_script" not in {tool.name for tool in tools.tools}
-            async with installed_editor(directory, extension, aseprite) as manual:
+            assert len(tools.tools) == (126 if animation else 125) and "run_lua_script" not in {tool.name for tool in tools.tools}
+            async with installed_editor(directory, extension, aseprite, port) as manual:
                 async def connected(exclude=None):
                     async with asyncio.timeout(20):
                         while True:
@@ -165,6 +166,17 @@ async def verify(python, extension, aseprite, directory):
                 assert (await preview(document, undone["revision"], "undo")).tobytes() == before.tobytes()
                 redone = await call("redo", document_id=document, expected_revision=undone["revision"])
                 assert (await preview(document, redone["revision"], "redo")).tobytes() == after.tobytes()
+                if animation:
+                    timeline = await call("apply_animation", document_id=document, expected_revision=redone["revision"],
+                        operations=[{"op": "add_frames", "count": 2, "duration_ms": 120},
+                            {"op": "set_frame_duration", "from_frame": 2, "to_frame": 3, "duration_ms": 200},
+                            {"op": "set_tag", "tag": "walk", "from_frame": 1, "to_frame": 3}])
+                    assert timeline["data"]["frames"] == 3 and timeline["data"]["frame_durations_ms"] == [100, 200, 200]
+                    history = await call("undo", document_id=document, expected_revision=timeline["revision"])
+                    assert (await call("get_document_info", document_id=document))["data"]["frames"] == 1
+                    redone = await call("redo", document_id=document, expected_revision=history["revision"])
+                    assert (await call("get_document_info", document_id=document))["data"]["tags"][0]["name"] == "walk"
+                    assert (await preview(document, redone["revision"], "animation-redo")).tobytes() == after.tobytes()
                 target = directory / "中文 保存.aseprite"
                 saved = await call("save_sprite", document_id=document, expected_revision=redone["revision"], path=str(target))
                 assert target.is_file()
@@ -197,10 +209,12 @@ async def verify(python, extension, aseprite, directory):
                 session = status["session_id"]
                 docs = await call("list_documents")
                 assert len(docs["data"]["documents"]) == 1 and docs["data"]["documents"][0]["saved"]
-                evidence["checks"] = ["installed-site-packages", "125-tools-no-raw-lua", "packaged-extension-init", "direct-connection-without-config-files", "unsaved-manual-edit",
+                evidence["checks"] = ["installed-site-packages", f"{len(tools.tools)}-tools-no-raw-lua", "packaged-extension-init", "direct-connection-without-config-files", "unsaved-manual-edit",
                     "atomic-batch-and-dedup", "MCP-image-content", "undo-redo-pixel-equality", "explicit-Chinese-save",
                     "overwrite-refusal", "installed-CLI-read-edit", "legacy-CLI-read", "reconnect-stale-session",
                     "CLI-receipt-survives-editor-reconnect"]
+                if animation:
+                    evidence["checks"].append("optional-animation-transaction-history-preview")
         # Verify the exact console entry shown in the public client config.
         console = python.with_name("aseprite-mcp.exe")
         cli_parameters = StdioServerParameters(command=str(console), args=[],
@@ -230,5 +244,9 @@ if __name__ == "__main__":
     parser.add_argument("--extension", type=Path, required=True)
     parser.add_argument("--aseprite", type=Path, default=Path(os.environ.get("ASEPRITE_PATH", "aseprite")))
     parser.add_argument("--work-dir", type=Path, required=True, help="A new private test directory")
+    parser.add_argument("--port", type=int, default=8765, help="Private test endpoint; match both installed processes")
+    parser.add_argument("--animation", action="store_true", help="Also verify the optional animation capability set")
     args = parser.parse_args()
-    asyncio.run(verify(args.python.resolve(), args.extension.resolve(), args.aseprite.resolve(), args.work_dir.resolve()))
+    if not 1 <= args.port <= 65535:
+        parser.error("--port must be 1 to 65535")
+    asyncio.run(verify(args.python.resolve(), args.extension.resolve(), args.aseprite.resolve(), args.work_dir.resolve(), args.port, args.animation))

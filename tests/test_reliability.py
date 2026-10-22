@@ -20,7 +20,7 @@ from aseprite_mcp.core.execution import Executor
 from aseprite_mcp.core.legacy import worker_tool
 from aseprite_mcp.core.protocol import CORE_CAPABILITIES, Handshake, Limits, Result
 from conftest import run
-from live_support import editor_process, until
+from live_support import live_port, editor_process, until
 
 
 def wire(name="undo", session="s", request_id="once", **extra):
@@ -96,7 +96,7 @@ def test_socket_lost_or_late_write_receipt_is_not_replayed(tmp_path, monkeypatch
     async def scenario():
         limits = Limits(timeout_seconds=.08)
         executor = Executor(None, limits)
-        bridge = LiveBridge(executor, RuntimeConfig(limits=limits))
+        bridge = LiveBridge(executor, RuntimeConfig(port=live_port(), limits=limits))
         async with bridge.lifespan():
             async with connect(bridge.url) as ws:
                 hello = Handshake(protocol_version=1, session_id="s", aseprite_version="1.3.7",
@@ -176,13 +176,13 @@ def test_editor_reconnect_preserves_cli_write_receipt(tmp_path):
 
 def test_port_collision_is_explicit_and_never_changes_endpoint():
     async def scenario():
-        first = LiveBridge(Executor(None), RuntimeConfig())
+        first = LiveBridge(Executor(None), RuntimeConfig(port=live_port()))
         async with first.lifespan():
-            second = LiveBridge(Executor(None), RuntimeConfig())
+            second = LiveBridge(Executor(None), RuntimeConfig(port=live_port()))
             with pytest.raises(OSError, match="choose another --port"):
                 async with second.lifespan():
                     pytest.fail("Must not silently change port")
-            assert first.url == "ws://127.0.0.1:8765"
+            assert first.url == f"ws://127.0.0.1:{live_port()}"
     run(scenario())
 
 
@@ -247,7 +247,7 @@ def test_real_editor_faults_recovery_and_limits(tmp_path, monkeypatch):
     async def scenario():
         limits = Limits(timeout_seconds=.6)
         executor = Executor(None, limits)
-        bridge = LiveBridge(executor, RuntimeConfig(limits=limits))
+        bridge = LiveBridge(executor, RuntimeConfig(port=live_port(), limits=limits))
         async with bridge.lifespan(), editor_process(tmp_path) as manual:
             await until(lambda: executor.live is not None)
             async def call(name, document=None, revision=None, **params):

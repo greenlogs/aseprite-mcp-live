@@ -1,6 +1,6 @@
 # Windows 安装与使用
 
-首版基线：Windows、Python 3.13+、uv、自己持有的 Aseprite 1.3.7 / API 28。服务与扩展版本均为 0.3.0，内部协议 v1。macOS/Linux 与其他软件版本尚未验收。没有公开下载地址；不要从上游参考仓库下载本项目扩展。
+首版基线：Windows、Python 3.13+、uv、自己持有的 Aseprite 1.3.7 / API 28。服务与扩展版本均为 0.4.0，内部协议 v1。macOS/Linux 与其他软件版本尚未验收。没有公开下载地址；不要从上游参考仓库下载本项目扩展。
 
 ## 准备安装文件
 
@@ -11,7 +11,7 @@ uv sync --locked --python 3.13
 uv run --locked python scripts/build_release.py --out-dir dist
 ```
 
-需要 `aseprite_mcp-0.3.0-py3-none-any.whl`、`requirements.txt`、`aseprite-mcp-live-0.3.0.aseprite-extension` 和 `SHA256SUMS`。源码包用于开发复现，不是使用服务的前提。通过 `Get-FileHash -Algorithm SHA256 <文件>` 与摘要清单比对。
+需要 `aseprite_mcp-0.4.0-py3-none-any.whl`、`requirements.txt`、`aseprite-mcp-live-0.4.0.aseprite-extension` 和 `SHA256SUMS`。源码包用于开发复现，不是使用服务的前提。通过 `Get-FileHash -Algorithm SHA256 <文件>` 与摘要清单比对。
 
 ## 安装服务
 
@@ -20,7 +20,7 @@ uv run --locked python scripts/build_release.py --out-dir dist
 ```powershell
 uv venv --python 3.13 'C:/Tools/aseprite-mcp/.venv'
 uv pip sync --python 'C:/Tools/aseprite-mcp/.venv/Scripts/python.exe' --require-hashes 'C:/Downloads/aseprite-mcp/requirements.txt'
-uv pip install --python 'C:/Tools/aseprite-mcp/.venv/Scripts/python.exe' --no-deps 'C:/Downloads/aseprite-mcp/aseprite_mcp-0.3.0-py3-none-any.whl'
+uv pip install --python 'C:/Tools/aseprite-mcp/.venv/Scripts/python.exe' --no-deps 'C:/Downloads/aseprite-mcp/aseprite_mcp-0.4.0-py3-none-any.whl'
 ```
 
 依赖清单由 uv.lock 导出，含锁定版本和哈希，不含开发依赖或本地源码路径。依赖安装需要网络或相应的 uv 缓存。uv 会拒绝不满足 Python 版本的环境；不要用系统旧版 Python 替代新环境。
@@ -50,14 +50,14 @@ stdio 服务等待 MCP 客户端输入；不要把正常等待当成启动失败
 
 在 Aseprite 的 Edit > Preferences > Extensions 使用 Add Extension 选择 `.aseprite-extension`，按软件提示安装/启用并重启。这是标准包安装入口；本阶段自动验收采用下述手动安装方式，未自动点击该对话框。
 
-手动安装方式：扩展文件本身是 ZIP，将其解压到当前 Aseprite 配置目录中的 `extensions/aseprite-mcp-live/`，确保该目录直接包含 `package.json`、四个 `.lua`、`LICENSE`、`NOTICE.md`，不能再嵌套一层。Windows 通常在 `%APPDATA%/Aseprite`；便携版可能不同，使用当前软件实际配置位置。隔离验收通过 `ASEPRITE_USER_FOLDER` 指定全新配置目录，没有修改个人配置。只需这两种安装方式之一。
+手动安装方式：扩展文件本身是 ZIP，将其解压到当前 Aseprite 配置目录中的 `extensions/aseprite-mcp-live/`，确保该目录直接包含 `package.json`、五个 `.lua`、`LICENSE`、`NOTICE.md`，不能再嵌套一层。Windows 通常在 `%APPDATA%/Aseprite`；便携版可能不同，使用当前软件实际配置位置。隔离验收通过 `ASEPRITE_USER_FOLDER` 指定全新配置目录，没有修改个人配置。只需这两种安装方式之一。
 
 1. 安装并启用配套扩展后，打开 Aseprite 和 MCP 客户端即可；两者启动顺序不限。
 2. 首次按 Aseprite 权限提示允许扩展使用本机回环 WebSocket。扩展随后每秒自动等待服务；服务启动后自动连接。
 3. 服务重启后扩展直接重新连接、建立新会话。无需查找文件或再次选择 JSON；旧文档/会话 ID 仍然失效，要重新列文档。
 4. File > Scripts > MCP: Connect / Settings 可查看状态、设置 Host/Port 和 Connect automatically；默认 `127.0.0.1`、`8765`。Disconnect 会停用自动连接，Apply / Connect 并勾选自动连接可恢复；设置由扩展偏好保存。
 
-状态工具可核对 `connected=true`、`service_version=extension_version=0.3.0`、`connection_mode=direct` 和 API 28，然后取得 `session_id`；它是诊断入口，不再是连接的必需步骤。
+状态工具可核对 `connected=true`、`service_version=extension_version=0.4.0`、`connection_mode=direct` 和 API 28，然后取得 `session_id`；它是诊断入口，不再是连接的必需步骤。
 
 ## 命令行与多实例
 
@@ -96,3 +96,24 @@ CLI 只操作磁盘副本。`cli_execute` 的 info 返回 `data.file_revision`�
 卸载先从 MCP 客户端移除配置、退出服务，并在 Aseprite 扩展列表卸载/禁用该扩展；手动安装则退出 Aseprite 后仅移除对应 `extensions/aseprite-mcp-live` 目录。服务用 `uv pip uninstall --python <安装环境 python.exe> aseprite-mcp` 卸载。仅当确认环境专用且无其他用途时才移除整个安装环境；不要删除个人画布或 Aseprite 本体。
 
 开发者可按[测试说明](TESTING.md#p2-隔离安装与阶段集成)复现隔离安装验收。候选验收和实际发布状态见[发布说明](RELEASING.md)。
+
+## 可选基础动画
+
+0.4.0 配套服务/扩展提供基础动画。在 MCP 客户端 env 中增加 `"ASEPRITE_MCP_CAPABILITY_SETS": "animation"`，重启服务后，core/all 增加 `apply_animation`（10/126项），cli仍116项。状态的 enabled_capability_sets 表示配置，capabilities 中的 apply_animation 表示双方已协商；旧版本需配套升级。默认不启用，不自动更改现有客户端配置。
+
+读取 get_document_info 的 revision 后调用：
+
+```json
+{
+  "session_id": "从状态取得",
+  "document_id": "从文档列表取得",
+  "expected_revision": 12,
+  "operations": [
+    {"op": "add_frames", "count": 2, "duration_ms": 100},
+    {"op": "set_frame_duration", "from_frame": 1, "to_frame": 3, "duration_ms": 180},
+    {"op": "set_tag", "tag": "walk", "from_frame": 1, "to_frame": 3, "direction": "pingpong"}
+  ]
+}
+```
+
+帧从1开始，追加复制末帧；另支持 delete_frame(frame) 与 delete_tag(tag)。标签精确匹配名称，重名拒绝；duration_ms为1–65535整数，总帧数最多256。一个批次一次撤销/重做，不自动保存，元数据返回 frame_durations_ms/tags。普通可编辑RGB文档（含组、偏移、缺失和关联Cel）已验收；非RGB、锁定/背景/参考/Tilemap拒绝。复制像素及CPU预算超限整批回滚。更完整的字段、错误和未来范围见[能力清单](development/CAPABILITIES.md)。调色板、特效、补间和Tilemap尚无实时迁移。

@@ -19,7 +19,7 @@ from aseprite_mcp.core.config import RuntimeConfig
 from aseprite_mcp.core.execution import Executor
 from aseprite_mcp.core.protocol import Limits
 from conftest import run
-from live_support import editor_process, until
+from live_support import live_port, editor_process, until
 
 
 @pytest.mark.real
@@ -186,7 +186,7 @@ def test_real_preview_limits_without_mutation(tmp_path, monkeypatch, limit):
     async def scenario():
         limits = Limits(**{limit: 500 if limit == "max_png_bytes" else 2100})
         executor = Executor(None, limits)
-        bridge = LiveBridge(executor, RuntimeConfig(limits=limits))
+        bridge = LiveBridge(executor, RuntimeConfig(port=live_port(), limits=limits))
         async with bridge.lifespan(), editor_process(tmp_path) as manual:
             await until(lambda: executor.live is not None)
             created = await executor.execute(json.dumps({"request_id": "create", "target": {

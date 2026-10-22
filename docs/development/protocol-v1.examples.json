@@ -10,7 +10,7 @@
       "apply_operations",
       "get_preview"
     ],
-    "extension_version": "0.3.0"
+    "extension_version": "0.4.0"
   },
   "welcome": {
     "type": "welcome",
@@ -145,6 +145,33 @@
             "op": "create_layer",
             "name": "Paint",
             "ref": "paint"
+          }
+        ]
+      }
+    },
+    {
+      "protocol_version": 1,
+      "request_id": "animation-example",
+      "target": {
+        "backend": "live",
+        "session_id": "session-1",
+        "document_id": "document-1"
+      },
+      "expected_revision": 0,
+      "action": {
+        "name": "apply_animation",
+        "operations": [
+          {
+            "op": "add_frames",
+            "count": 2,
+            "duration_ms": 100
+          },
+          {
+            "op": "set_tag",
+            "tag": "walk",
+            "from_frame": 1,
+            "to_frame": 3,
+            "direction": "pingpong"
           }
         ]
       }

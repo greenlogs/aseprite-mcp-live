@@ -10,7 +10,7 @@ from aseprite_mcp.core.config import RuntimeConfig
 from aseprite_mcp.core.execution import Executor
 from aseprite_mcp.core.protocol import Request
 from conftest import run
-from live_support import editor_process, until
+from live_support import live_port, editor_process, until
 
 
 @pytest.mark.real
@@ -18,7 +18,7 @@ def test_real_documents_transactions_history_save(tmp_path, monkeypatch):
 
     async def scenario():
         executor = Executor(None)
-        bridge = LiveBridge(executor, RuntimeConfig())
+        bridge = LiveBridge(executor, RuntimeConfig(port=live_port()))
         async with bridge.lifespan(), editor_process(tmp_path) as manual:
             await until(lambda: executor.live is not None)
             # Welcome is processed asynchronously on the editor's UI thread.

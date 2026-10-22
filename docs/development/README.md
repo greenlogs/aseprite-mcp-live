@@ -55,3 +55,5 @@ P2 是首发交付点。发布验收通过只表示产物可发布；不自动�
 P2 已建立：[Windows 安装](../INSTALL.md)、[故障排查](../TROUBLESHOOTING.md)、[候选构建与发布边界](../RELEASING.md)。真实隔离安装和 Windows CI 契约命令分别见 TESTING；CI 不替代 GUI 验收。
 
 用户更正P2-M4：0.3.0完全无文件直连，默认127.0.0.1:8765、CLI覆盖；不读取连接JSON/运行目录、不使用共享token，扩展无选文件入口。当前规则以INSTALL/PROTOCOL为准，历史报告的手选/自动读JSON步骤不再适用。
+
+P3基础动画批次已完成；维护时先读[兼容清单](CAPABILITIES.md)及[P3-M2交接](../progress/P3-M2.md)，再评估调色板/特效/补间/Tilemap的独立范围。矩阵与实际注册由scripts/check_capabilities.py核对，不会后台自动更新。可选animation默认关闭，启用后才注册高级入口。

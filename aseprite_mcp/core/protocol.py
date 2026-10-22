@@ -9,11 +9,14 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
 PROTOCOL_VERSION = 1
-SERVICE_VERSION = "0.3.0"
+SERVICE_VERSION = "0.4.0"
 CORE_CAPABILITIES = frozenset({
     "list_documents", "get_document_info", "create_sprite", "apply_operations",
     "get_preview", "save_sprite", "undo", "redo",
 })
+CAPABILITY_SETS = {"animation": frozenset({"apply_animation"})}
+LIVE_CAPABILITIES = CORE_CAPABILITIES | frozenset().union(*CAPABILITY_SETS.values())
+LIVE_WRITES = frozenset({"apply_operations", "apply_animation", "create_sprite", "save_sprite", "undo", "redo"})
 
 
 class ErrorCode(StrEnum):
@@ -77,14 +80,15 @@ class Welcome(Model):
     limits: Limits
 
 
-def negotiate(hello: Handshake) -> frozenset[str]:
+def negotiate(hello: Handshake, capability_sets: frozenset[str] = frozenset()) -> frozenset[str]:
     if hello.protocol_version != PROTOCOL_VERSION:
         raise BackendError(ErrorCode.VERSION_MISMATCH, "Protocol version must be 1")
     if hello.extension_version is not None and hello.extension_version != SERVICE_VERSION:
         raise BackendError(ErrorCode.VERSION_MISMATCH, "Install matching service and extension versions")
     if hello.api_version < 28:
         raise BackendError(ErrorCode.UNSUPPORTED_CAPABILITY, "Aseprite API 28+ required")
-    return frozenset(hello.capabilities) & CORE_CAPABILITIES
+    allowed = CORE_CAPABILITIES | frozenset().union(*(CAPABILITY_SETS[name] for name in capability_sets))
+    return frozenset(hello.capabilities) & allowed
 
 
 class LiveTarget(Model):
@@ -168,6 +172,49 @@ class ApplyOperations(Model):
         return self
 
 
+DurationMs = Annotated[int, Field(ge=1, le=65535)]
+TagName = Annotated[str, Field(min_length=1, max_length=256)]
+
+
+class AddFrames(Model):
+    op: Literal["add_frames"]
+    count: Annotated[int, Field(ge=1, le=255)]
+    duration_ms: DurationMs = 100
+
+
+class DeleteFrame(Model):
+    op: Literal["delete_frame"]
+    frame: Positive
+
+
+class FrameDuration(Model):
+    op: Literal["set_frame_duration"]
+    from_frame: Positive
+    to_frame: Positive
+    duration_ms: DurationMs
+
+
+class SetTag(Model):
+    op: Literal["set_tag"]
+    tag: TagName
+    from_frame: Positive
+    to_frame: Positive
+    direction: Literal["forward", "reverse", "pingpong", "pingpong_reverse"] = "forward"
+
+
+class DeleteTag(Model):
+    op: Literal["delete_tag"]
+    tag: TagName
+
+
+AnimationEdit = Annotated[AddFrames | DeleteFrame | FrameDuration | SetTag | DeleteTag, Field(discriminator="op")]
+
+
+class ApplyAnimation(Model):
+    name: Literal["apply_animation"]
+    operations: Annotated[list[AnimationEdit], Field(min_length=1)]
+
+
 class Region(Model):
     x: NonNegative
     y: NonNegative
@@ -193,7 +240,7 @@ class History(Model):
 
 
 Action = Annotated[
-    GetInfo | ListDocuments | CreateSprite | ApplyOperations | GetPreview | SaveSprite | History,
+    GetInfo | ListDocuments | CreateSprite | ApplyOperations | ApplyAnimation | GetPreview | SaveSprite | History,
     Field(discriminator="name"),
 ]
 
@@ -215,7 +262,7 @@ class Request(Model):
             document_action = self.action.name not in {"list_documents", "create_sprite"}
             if document_action != (self.target.document_id is not None):
                 raise ValueError("Explicit document target required only for document operations")
-            if self.action.name in {"apply_operations", "get_preview", "save_sprite", "undo", "redo"}:
+            if self.action.name in (LIVE_WRITES - {"create_sprite"}) | {"get_preview"}:
                 if self.expected_revision is None:
                     raise ValueError("Expected revision required")
         elif self.expected_revision is not None or self.expected_context is not None:
@@ -297,6 +344,8 @@ def check_limits(request: Request, limits: Limits) -> None:
                      1 if isinstance(op, Pixel) else 0 for op in action.operations)
         if pixels > limits.max_pixels:
             raise BackendError(ErrorCode.LIMIT_EXCEEDED, "Batch exceeds pixel budget")
+    if isinstance(action, ApplyAnimation) and len(action.operations) > limits.max_operations:
+        raise BackendError(ErrorCode.LIMIT_EXCEEDED, "Too many animation operations")
 
 
 def parse_request(raw: str | bytes, limits: Limits) -> Request:

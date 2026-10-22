@@ -17,8 +17,9 @@ local function editable(layer)
   end
   return ordinary(layer)
 end
-function M.new(limits,preview)
-  local self={documents={},next_document=0,next_layer=0,context=0,suppress_context=false,limits=limits}
+function M.new(limits,preview,animation,animation_enabled)
+  local self={documents={},next_document=0,next_layer=0,context=0,suppress_context=false,limits=limits,
+    animation=animation,animation_enabled=animation_enabled}
   self.site_listener=app.events:on("sitechange",function()
     if not self.suppress_context then self.context=self.context+1 end
   end)
@@ -59,6 +60,11 @@ function M.new(limits,preview)
           elseif event=="change" then fail("UNSUPPORTED_CAPABILITY","Sprite change events required") end
         end
       end
+      if animation then
+        local signature=animation.signature(sprite)
+        if record.animation_signature and record.animation_signature~=signature then record.revision=record.revision+1 end
+        record.animation_signature=signature
+      end
       current[#current+1]=record
       local layers={}
       local function walk(items,parent_id)
@@ -91,6 +97,10 @@ function M.new(limits,preview)
       revision=record.revision,context_revision=self.context,
       aseprite_version=tostring(app.version),api_version=app.apiVersion}
     for _,frame in ipairs(sprite.frames) do data.frame_durations[#data.frame_durations+1]=frame.duration end
+    if animation then
+      local timeline=animation.metadata(sprite)
+      data.frame_durations_ms=timeline.frame_durations_ms;data.tags=timeline.tags
+    end
     for _,entry in ipairs(record.layers) do
       local layer=entry.object
       data.layers[#data.layers+1]={id=entry.id,name=layer.name,parent_id=entry.parent_id,
@@ -105,13 +115,18 @@ function M.new(limits,preview)
   end
   function self:with_target(sprite,callback)
     local old_sprite,old_layer,old_frame=app.activeSprite,app.activeLayer,app.activeFrame
+    local old_frame_number=old_frame and old_frame.frameNumber
     local previous=self.suppress_context; self.suppress_context=true
     local ok,value=pcall(function() app.activeSprite=sprite; return callback() end)
     local restored,restore_error=pcall(function()
       app.activeSprite=old_sprite
       if old_sprite then
         if old_layer then app.activeLayer=old_layer end
-        if old_frame then app.activeFrame=old_frame end
+        if old_frame then
+          local surviving
+          for _,frame in ipairs(old_sprite.frames) do if frame==old_frame then surviving=frame;break end end
+          app.activeFrame=surviving or old_sprite.frames[math.min(old_frame_number,#old_sprite.frames)]
+        end
       end
     end)
     self.suppress_context=previous
@@ -253,6 +268,22 @@ function M.new(limits,preview)
       local layer_refs={}
       for ref,layer in pairs(refs) do layer_refs[ref]=assert(find(record.layers,layer)).id end
       return {layer_refs=next(layer_refs) and layer_refs or nil,operations=#action.operations},record
+    elseif action.name=="apply_animation" and animation and self.animation_enabled then
+      animation.validate(sprite,action.operations,limits)
+      self:with_target(sprite,function()
+        app.transaction("MCP animation",function()
+          local started=os.clock()
+          local function check_time()
+            if os.clock()-started>(limits.max_batch_seconds or 0.25) then
+              fail("LIMIT_EXCEEDED","Atomic animation exceeded CPU budget; reduce batch size")
+            end
+          end
+          for _,op in ipairs(action.operations) do self.animation.apply_one(sprite,op,check_time) end
+        end)
+      end)
+      self:sync()
+      local data=animation.metadata(sprite);data.operations=#action.operations;data.frames=#sprite.frames
+      return data,record
     elseif action.name=="save_sprite" then
       local path=action.path
       if not path or path=="" then

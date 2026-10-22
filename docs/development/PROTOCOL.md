@@ -1,6 +1,6 @@
 # 协议v1与执行接口
 
-当前服务/扩展0.3.0。业务Request/Result维持v1；hello已移除token，原0.1/0.2发现文件和认证握手必须配套升级。模型唯一来源core/protocol.py；[可校验样例](protocol-v1.examples.json)由test_protocol验证。实际架构见[ARCHITECTURE](ARCHITECTURE.md)，历史契约见各版本交接，不用于当前安装。
+当前服务/扩展0.4.0。业务Request/Result维持v1；hello已移除token，原0.1/0.2发现文件和认证握手必须配套升级。模型唯一来源core/protocol.py；[可校验样例](protocol-v1.examples.json)由test_protocol验证。实际架构见[ARCHITECTURE](ARCHITECTURE.md)，历史契约见各版本交接，不用于当前安装。
 
 ## 连接与握手
 
@@ -8,13 +8,13 @@ MCP客户端使用stdio；Python与扩展使用回环WebSocket text消息，每�
 
 扩展直接连接配置地址，不创建/读取连接JSON、运行目录、token、配对文件；旧CONNECTION_FILE/RUNTIME_DIR环境不读取。设置无选文件入口。仅允许无Origin或目标原生ws://Origin，普通http/https/nullOrigin在HTTP握手拒绝403。没有共享密钥认证，来源限制、版本检查均不证明本机程序身份；用户启用扩展表示允许该本机端点实时编辑，可Disconnect停用。
 
-hello：`{type:"hello",protocol_version:1,session_id,aseprite_version,api_version,extension_version?,capabilities}`。标识非空且最长128字符；版本字段严格类型。protocol不等于1或提供的extension_version不等于服务版本为VERSION_MISMATCH，api<28为UNSUPPORTED_CAPABILITY。未知能力忽略，协商取核心能力交集。旧hello含token等多余字段拒绝INVALID_REQUEST；不悄悄跳过旧认证。
+hello：`{type:"hello",protocol_version:1,session_id,aseprite_version,api_version,extension_version?,capabilities}`。标识非空且最长128字符；版本字段严格类型。protocol不等于1或提供的extension_version不等于服务版本为VERSION_MISMATCH，api<28为UNSUPPORTED_CAPABILITY。未知能力忽略，协商取核心能力加显式启用能力集与编辑器能力的交集。旧hello含token等多余字段拒绝INVALID_REQUEST；不悄悄跳过旧认证。
 
-welcome：`{type:"welcome",protocol_version:1,session_id,capabilities,limits}`。握手失败发送Result（request_id=null）后关闭。第二个活动编辑器拒绝SESSION_MISMATCH；每个socket OPEN新会话，断开清实时注册与缓存，旧文档/图层ID不复用。negotiate(hello)、Executor.attach_live(backend,hello)不接收token。
+welcome：`{type:"welcome",protocol_version:1,session_id,capabilities,limits}`。握手失败发送Result（request_id=null）后关闭。第二个活动编辑器拒绝SESSION_MISMATCH；每个socket OPEN新会话，断开清实时注册与缓存，旧文档/图层ID不复用。negotiate(hello,capability_sets=frozenset())、Executor.attach_live(backend,hello)不接收token。
 
 传输保活：扩展Timer每秒发`{"type":"ping"}`，服务回`{"type":"pong"}`，均不作为业务请求或去重回执；5秒无回应或socket CLOSE/ERROR释放旧socket，由下一Timer tick重新连接。等待OPEN也受此期限；手动停止关闭Timer/socket，自动恢复需在设置中启用。保活不重发业务修改、不将未知结果变成功。
 
-状态工具返回connected/session_id/service_version/extension_version/protocol_version/capabilities/aseprite_version/api_version/url，以及`connection_mode:"direct"`、`authentication:"none"`；没有connection_file或automatic_discovery。
+状态工具返回connected/session_id/service_version/extension_version/protocol_version/capabilities/enabled_capability_sets/aseprite_version/api_version/url，以及`connection_mode:"direct"`、`authentication:"none"`；没有connection_file或automatic_discovery。
 
 ## 目标、修订和公共入口
 
@@ -95,3 +95,23 @@ Limits启动时固定，环境名ASEPRITE_MCP_加大写字段名，全部正值�
 | dedup_ttl_seconds | 120秒 |
 
 Executor按实时会话/规范化磁盘路径独立排队。调用方取消只取消等待，已接收任务由shield保护直到确认，执行中同ID合并，不同内容立即拒绝；排队超时明确未发送。缓存最终结果（含失败和结果未知），同ID同内容在TTL内且未淘汰时直接返回，扩展也保留会话去重。断开清实时缓存，不清CLI回执；旧会话完成不污染新缓存。TTL/容量/重连后无去重保证，RESULT_UNKNOWN必须先读状态再决定，不换ID盲重发。迟到回执丢弃，不自动undo或重试修改。
+
+## P3 可选动画增量（0.4.0）
+
+业务协议仍v1；服务/扩展配套0.4.0，未匹配版本明确拒绝。RuntimeConfig.capability_sets与Executor同名关键字默认空，环境ASEPRITE_MCP_CAPABILITY_SETS仅识别animation，未知组启动失败。核心八动作不变；LiveBackend知道可选apply_animation，但仅双方握手且服务启用时路由。默认工具9/116/125，启用后core/all为10/126，CLI仍116；公共CLI不支持该动作，无降级。
+
+apply_animation要求显式文档、expected_revision，可选expected_context与request_id；operations非空，数量受max_operations限制。严格模型额外字段拒绝；数字不接受bool/字符串。
+
+| op | 字段 |
+|---|---|
+| add_frames | count 1–255，duration_ms默认100；末尾复制最后帧，操作后总帧数≤256 |
+| delete_frame | frame≥1且存在；不得删除唯一帧 |
+| set_frame_duration | from_frame/to_frame从1开始、闭区间，duration_ms 1–65535整数 |
+| set_tag | tag长度1–256，from_frame/to_frame闭区间，direction默认forward，可为reverse/pingpong/pingpong_reverse |
+| delete_tag | tag精确名称，缺失或重名INVALID_TARGET |
+
+先模拟顺序帧数/标签存在性并验证预算，再一个app.transaction执行。原生删帧可调整/删除标签；若后续操作因此失效，整个事务回滚。复制预算采用每层最大Cel面积乘追加帧数保守累计，CPU预算超限也回滚；不拆批。RGB普通可编辑层和组受支持，锁层/背景/参考/Tilemap/灰度/索引拒绝。运行时探测AniDir与Sprite方法，不把新版API存在当作API28可用证据。
+
+成功data为operations/frames/frame_durations_ms/tags，tag条目name/from_frame/to_frame/direction。get_document_info也增补frame_durations_ms和tags，原frame_durations秒数组保留。sync补充时间轴指纹，帧时长/标签变化即使没有change事件也使旧revision失效。所有成功写入使用新revision；未知写入同核心返回RESULT_UNKNOWN。
+
+临时目标切换恢复原活动文档/层/帧；删除原活动帧时恢复到存活帧，原帧号超过末帧则取末帧。未启用时扩展仍可报告只读动画元数据，但不接受动画写入。完整范围与逐工具矩阵见[能力清单](CAPABILITIES.md)。

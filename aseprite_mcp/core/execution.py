@@ -11,7 +11,7 @@ from typing import Protocol
 
 from .protocol import (
     BackendError, ErrorCode, Handshake, Limits, LiveTarget, Request, Result, failure,
-    negotiate, parse_request,
+    LIVE_WRITES, negotiate, parse_request,
 )
 
 log = logging.getLogger(__name__)
@@ -24,8 +24,9 @@ class Backend(Protocol):
 
 
 class Executor:
-    def __init__(self, cli: Backend, limits: Limits | None = None):
+    def __init__(self, cli: Backend, limits: Limits | None = None, *, capability_sets: frozenset[str] = frozenset()):
         self.limits = limits or Limits()
+        self.capability_sets = capability_sets
         self.cli = cli
         self.live: Backend | None = None
         self.session_id: str | None = None
@@ -35,7 +36,7 @@ class Executor:
         self._inflight = {}
 
     def attach_live(self, backend: Backend, hello: Handshake):
-        capabilities = negotiate(hello)
+        capabilities = negotiate(hello, self.capability_sets)
         if self.live is not None:
             raise BackendError(ErrorCode.SESSION_MISMATCH, "An editor is already attached")
         self.live, self.session_id = backend, hello.session_id
@@ -119,9 +120,7 @@ class Executor:
                         try:
                             result = await asyncio.wait_for(backend.execute(request), self.limits.timeout_seconds)
                         except TimeoutError as exc:
-                            code = ErrorCode.RESULT_UNKNOWN if request.action.name in {
-                                "apply_operations", "create_sprite", "save_sprite", "undo", "redo"
-                            } else ErrorCode.TIMEOUT
+                            code = ErrorCode.RESULT_UNKNOWN if request.action.name in LIVE_WRITES else ErrorCode.TIMEOUT
                             raise BackendError(code, "Live request deadline exceeded") from exc
                     else:
                         result = await backend.execute(request)

@@ -11,7 +11,7 @@ uv run --locked python scripts/build_release.py --out-dir dist
 uv run --locked python scripts/build_release.py --out-dir dist --check-only
 ```
 
-0.3.0 候选包含 wheel、源码 tar.gz、`.aseprite-extension`、生产依赖 requirements.txt、manifest.json 和 SHA256SUMS。扩展为确定时间戳、排序后的 ZIP，根部直接为 manifest/四个 Lua/许可与 NOTICE；构建器核对 manifest、Lua 握手和 Python 服务版本对应协议 v1。requirements.txt 来自 uv.lock，不包含源码编辑安装或开发依赖。
+0.4.0 候选包含 wheel、源码 tar.gz、`.aseprite-extension`、生产依赖 requirements.txt、manifest.json 和 SHA256SUMS。扩展为确定时间戳、排序后的 ZIP，根部直接为 manifest/五个 Lua/许可与 NOTICE；构建器核对 manifest、Lua 握手和 Python 服务版本对应协议 v1。requirements.txt 来自 uv.lock，不包含源码编辑安装或开发依赖。
 
 wheel 只含 aseprite_mcp 包、元数据及 MIT 许可，必须包含 backends/cli.lua 和 stdio 脚本入口。源码包白名单包含源码/扩展/测试/构建脚本/文档/锁文件，保留上游来源及许可。构建器逐一检查包清单，拒绝本地软件、可执行程序、个人 .env/.codex/.agents、恢复会话和缓存；本地 Aseprite/ 不分发。扩展 NOTICE 记录上游固定提交，未打包字体/图片资源；Python 依赖按各自许可从包索引安装，不打入本项目 wheel。
 
@@ -28,7 +28,7 @@ wheel 只含 aseprite_mcp 包、元数据及 MIT 许可，必须包含 backends/
 
 ## 候选与发布状态
 
-本次构建、干净安装与阶段集成结果以 [P2-M2 交接](progress/P2-M2.md) 和 [P2 总结](progress/P2.md) 为准；构建成功本身不足以认定可发布。维护者未来获得当次远程授权后，再设置仓库地址、上传审核后的相同摘要文件及说明。没有自动发布步骤。
+本次构建、干净安装与阶段集成结果以 [P3-M2 交接](progress/P3-M2.md) 和 [P3 总结](progress/P3.md) 为准；构建成功本身不足以认定可发布。维护者未来获得当次远程授权后，再设置仓库地址、上传审核后的相同摘要文件及说明。没有自动发布步骤。
 
 2026-10-21 本地结论：0.1.0/协议 v1 候选已完成 Windows 隔离安装、真实 MCP 图片与阶段集成验收，191 项回归通过；尚未发布，也未执行远程 CI。实际候选及摘要保留 .work/release，结果详见 P2-M2 交接。
 
@@ -39,3 +39,5 @@ wheel 只含 aseprite_mcp 包、元数据及 MIT 许可，必须包含 backends/
 0.3.0 改用固定端点直接握手，移除发现文件、token和扩展选JSON入口；服务/扩展必须配套升级。当前追加验收见 [P2-M4](progress/P2-M4.md)。历史0.1/0.2候选记录保留，不代表当前连接流程。
 
 2026-10-22：0.3.0无文件直连候选已验收，197项全量/61项无软件检查/独立安装真实闭环与显示通过。当前候选.work/release-direct；旧release/release-auto保留历史，尚未远程发布。
+
+2026-10-22 P3：0.4.0基础动画候选已验收，208项完整回归、71项无软件检查、矩阵与注册一致；新uv环境从wheel/锁定生产依赖安装，真实配套ZIP/SDK/CLI双入口、动画历史和图片显示通过。候选.work/release-p3，证据.work/p3-evidence与.work/p3-installed-final-evidence。依赖/软件版本基线未变，未推送、发布或运行远程CI。

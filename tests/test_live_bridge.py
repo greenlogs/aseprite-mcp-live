@@ -7,6 +7,8 @@ from pathlib import Path
 import shutil
 import subprocess
 
+from live_support import live_port
+
 import pytest
 from websockets.asyncio.client import connect
 
@@ -20,7 +22,7 @@ from conftest import run
 def test_socket_handshake_routing_dedup_and_cleanup(tmp_path, monkeypatch):
 
     async def scenario():
-        config = RuntimeConfig()
+        config = RuntimeConfig(port=live_port())
         executor = Executor(None)
         bridge = LiveBridge(executor, config)
         async with bridge.lifespan():
@@ -111,7 +113,7 @@ timer:start()
 
     async def scenario():
         executor = Executor(None)
-        bridge = LiveBridge(executor, RuntimeConfig())
+        bridge = LiveBridge(executor, RuntimeConfig(port=live_port()))
         async with bridge.lifespan():
             startup = subprocess.STARTUPINFO()
             startup.dwFlags |= subprocess.STARTF_USESHOWWINDOW
