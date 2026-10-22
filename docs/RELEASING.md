@@ -11,7 +11,7 @@ uv run --locked python scripts/build_release.py --out-dir dist
 uv run --locked python scripts/build_release.py --out-dir dist --check-only
 ```
 
-0.4.0 候选包含 wheel、源码 tar.gz、`.aseprite-extension`、生产依赖 requirements.txt、manifest.json 和 SHA256SUMS。扩展为确定时间戳、排序后的 ZIP，根部直接为 manifest/五个 Lua/许可与 NOTICE；构建器核对 manifest、Lua 握手和 Python 服务版本对应协议 v1。requirements.txt 来自 uv.lock，不包含源码编辑安装或开发依赖。
+当前0.4.1产物包含 wheel、源码 tar.gz、`.aseprite-extension`、生产依赖 requirements.txt、manifest.json 和 SHA256SUMS。扩展为确定时间戳、排序后的 ZIP，根部直接为 manifest/五个 Lua/许可与 NOTICE；构建器核对 manifest、Lua 握手和 Python 服务版本对应协议 v1。requirements.txt 来自 uv.lock，不包含源码编辑安装或开发依赖。
 
 wheel 只含 aseprite_mcp 包、元数据及 MIT 许可，必须包含 backends/cli.lua 和 stdio 脚本入口。源码包白名单仅包含运行源码、扩展、scripts/build_release.py、pyproject.toml、uv.lock、.python-version、.env.example、README与LICENSE；NOTICE保留上游来源。源码包、wheel和扩展包均排除docs/、提示词、AGENTS.md、SKILL.md、执行计划和CONTRIBUTING等维护文件，测试/CI/其他开发脚本也不分发。完整文档与测试保留在Git仓库；源码包仍可独立构建wheel和扩展。构建器逐一检查包清单，拒绝本地软件、可执行程序、个人 .env/.codex/.agents、恢复会话和缓存；本地 Aseprite/ 不分发。扩展 NOTICE 记录上游固定提交，未打包字体/图片资源；Python 依赖按各自许可从包索引安装，不打入本项目 wheel。
 
@@ -43,3 +43,5 @@ wheel 只含 aseprite_mcp 包、元数据及 MIT 许可，必须包含 backends/
 2026-10-22 P3：0.4.0基础动画候选已验收，208项完整回归、71项无软件检查、矩阵与注册一致；新uv环境从wheel/锁定生产依赖安装，真实配套ZIP/SDK/CLI双入口、动画历史和图片显示通过。候选.work/release-p3，证据.work/p3-evidence与.work/p3-installed-final-evidence。依赖/软件版本基线未变，未推送、发布或运行远程CI。
 
 2026-10-22 PACK-M1：按用户要求收紧分发白名单，并授权首次推送至上述仓库。以[分发维护交接](progress/PACK-M1.md)为最新分发内容与验证事实；P3早期源码包包含docs的清单仅是历史证据。
+
+2026-10-22 PACK-M2：用户明确授权后，0.4.1 wheel与sdist已发布至 [TestPyPI](https://test.pypi.org/project/aseprite-mcp/0.4.1/)，公开JSON文件摘要与本地一致，已从TestPyPI重新安装核对版本。扩展0.4.1、requirements与SHA256SUMS保留在dist，TestPyPI不承载扩展；本次没有上传正式PyPI或发布GitHub Release。详情见[发布交接](progress/PACK-M2.md)。

@@ -1,6 +1,6 @@
 # 开发环境与验收
 
-当前服务与扩展0.4.0，业务协议v1。目标Python3.13+、uv，Windows Aseprite1.3.7/API28为真实基线；其他平台未验证。软件路径通过ASEPRITE_PATH配置，本机位置仅记录在[REFERENCES](REFERENCES.md)。
+当前服务与扩展0.4.1，业务协议v1。目标Python3.13+、uv，Windows Aseprite1.3.7/API28为真实基线；其他平台未验证。软件路径通过ASEPRITE_PATH配置，本机位置仅记录在[REFERENCES](REFERENCES.md)。
 
 ## 环境和完整回归
 

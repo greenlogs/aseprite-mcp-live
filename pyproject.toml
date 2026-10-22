@@ -1,6 +1,6 @@
 [project]
 name = "aseprite-mcp"
-version = "0.4.0"
+version = "0.4.1"
 description = "Aseprite MCP with explicit CLI and live backend contracts"
 readme = "README.md"
 license = "MIT"

@@ -1,6 +1,6 @@
 # 协议v1与执行接口
 
-当前服务/扩展0.4.0。业务Request/Result维持v1；hello已移除token，原0.1/0.2发现文件和认证握手必须配套升级。模型唯一来源core/protocol.py；[可校验样例](protocol-v1.examples.json)由test_protocol验证。实际架构见[ARCHITECTURE](ARCHITECTURE.md)，历史契约见各版本交接，不用于当前安装。
+当前服务/扩展0.4.1。业务Request/Result维持v1；hello已移除token，原0.1/0.2发现文件和认证握手必须配套升级。模型唯一来源core/protocol.py；[可校验样例](protocol-v1.examples.json)由test_protocol验证。实际架构见[ARCHITECTURE](ARCHITECTURE.md)，历史契约见各版本交接，不用于当前安装。
 
 ## 连接与握手
 

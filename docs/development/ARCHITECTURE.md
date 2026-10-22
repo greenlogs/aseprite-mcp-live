@@ -1,6 +1,6 @@
 # 架构与接口边界
 
-当前版本0.4.0；Windows Aseprite1.3.7/API28基线。采用Python3.13+、uv、MCP stdio与Lua扩展；上游来源和许可见[THIRD_PARTY](../THIRD_PARTY.md)。P2-M4用户更正要求明确：连接不能依赖JSON文件，且扩展不能提供选文件入口。
+当前版本0.4.1；Windows Aseprite1.3.7/API28基线。采用Python3.13+、uv、MCP stdio与Lua扩展；上游来源和许可见[THIRD_PARTY](../THIRD_PARTY.md)。P2-M4用户更正要求明确：连接不能依赖JSON文件，且扩展不能提供选文件入口。
 
 ## 依赖与职责
 

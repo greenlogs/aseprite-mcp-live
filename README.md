@@ -6,7 +6,7 @@
 
 ## 当前状态
 
-**P3 已验收：基础动画迁移、核心与 CLI 回归、Windows 隔离安装通过；208 项测试通过。0.4.0 候选已验收、尚未发布。**
+**P3 已验收：基础动画迁移、核心与 CLI 回归、Windows 隔离安装通过；208 项测试通过。0.4.1 已发布至 TestPyPI（测试索引）。**
 
 已验证闭环：连接当前编辑器 → 读取未保存文档 → 批量编辑 → 直接返回预览 → 撤销与重做。本地候选包含 Python 服务和 Lua 扩展；当前以 Windows + Aseprite 1.3.7 / API 28 验收，macOS、Linux 待验证；基础动画支持追加/删除帧、帧时长和标签，通过 `ASEPRITE_MCP_CAPABILITY_SETS=animation` 显式启用；[兼容与范围](docs/development/CAPABILITIES.md)列出调色板、特效、补间和 Tilemap 等后续能力。
 

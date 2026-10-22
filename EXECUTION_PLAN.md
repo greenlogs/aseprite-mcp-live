@@ -46,3 +46,5 @@
 独立于产品阶段，维护安装包清单及仓库交付；[维护总结](docs/progress/PACK.md)。
 
 - [x] [PACK-M1 · 精简分发清单与首次推送](docs/progress/PACK-M1.md)
+
+- [x] [PACK-M2 · 0.4.1 TestPyPI发布](docs/progress/PACK-M2.md)

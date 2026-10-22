@@ -1,6 +1,6 @@
 # Windows 安装与使用
 
-首版基线：Windows、Python 3.13+、uv、自己持有的 Aseprite 1.3.7 / API 28。服务与扩展版本均为 0.4.0，内部协议 v1。macOS/Linux 与其他软件版本尚未验收。没有公开下载地址；不要从上游参考仓库下载本项目扩展。
+首版基线：Windows、Python 3.13+、uv、自己持有的 Aseprite 1.3.7 / API 28。服务与扩展版本均为 0.4.1，内部协议 v1。macOS/Linux 与其他软件版本尚未验收。没有公开下载地址；不要从上游参考仓库下载本项目扩展。
 
 ## 准备安装文件
 
@@ -11,7 +11,7 @@ uv sync --locked --python 3.13
 uv run --locked python scripts/build_release.py --out-dir dist
 ```
 
-需要 `aseprite_mcp-0.4.0-py3-none-any.whl`、`requirements.txt`、`aseprite-mcp-live-0.4.0.aseprite-extension` 和 `SHA256SUMS`。源码包用于开发复现，不是使用服务的前提。通过 `Get-FileHash -Algorithm SHA256 <文件>` 与摘要清单比对。
+需要 `aseprite_mcp-0.4.1-py3-none-any.whl`、`requirements.txt`、`aseprite-mcp-live-0.4.1.aseprite-extension` 和 `SHA256SUMS`。源码包用于开发复现，不是使用服务的前提。通过 `Get-FileHash -Algorithm SHA256 <文件>` 与摘要清单比对。
 
 ## 安装服务
 
@@ -20,7 +20,7 @@ uv run --locked python scripts/build_release.py --out-dir dist
 ```powershell
 uv venv --python 3.13 'C:/Tools/aseprite-mcp/.venv'
 uv pip sync --python 'C:/Tools/aseprite-mcp/.venv/Scripts/python.exe' --require-hashes 'C:/Downloads/aseprite-mcp/requirements.txt'
-uv pip install --python 'C:/Tools/aseprite-mcp/.venv/Scripts/python.exe' --no-deps 'C:/Downloads/aseprite-mcp/aseprite_mcp-0.4.0-py3-none-any.whl'
+uv pip install --python 'C:/Tools/aseprite-mcp/.venv/Scripts/python.exe' --no-deps 'C:/Downloads/aseprite-mcp/aseprite_mcp-0.4.1-py3-none-any.whl'
 ```
 
 依赖清单由 uv.lock 导出，含锁定版本和哈希，不含开发依赖或本地源码路径。依赖安装需要网络或相应的 uv 缓存。uv 会拒绝不满足 Python 版本的环境；不要用系统旧版 Python 替代新环境。
@@ -57,7 +57,7 @@ stdio 服务等待 MCP 客户端输入；不要把正常等待当成启动失败
 3. 服务重启后扩展直接重新连接、建立新会话。无需查找文件或再次选择 JSON；旧文档/会话 ID 仍然失效，要重新列文档。
 4. File > Scripts > MCP: Connect / Settings 可查看状态、设置 Host/Port 和 Connect automatically；默认 `127.0.0.1`、`8765`。Disconnect 会停用自动连接，Apply / Connect 并勾选自动连接可恢复；设置由扩展偏好保存。
 
-状态工具可核对 `connected=true`、`service_version=extension_version=0.4.0`、`connection_mode=direct` 和 API 28，然后取得 `session_id`；它是诊断入口，不再是连接的必需步骤。
+状态工具可核对 `connected=true`、`service_version=extension_version=0.4.1`、`connection_mode=direct` 和 API 28，然后取得 `session_id`；它是诊断入口，不再是连接的必需步骤。
 
 ## 命令行与多实例
 
@@ -99,7 +99,7 @@ CLI 只操作磁盘副本。`cli_execute` 的 info 返回 `data.file_revision`�
 
 ## 可选基础动画
 
-0.4.0 配套服务/扩展提供基础动画。在 MCP 客户端 env 中增加 `"ASEPRITE_MCP_CAPABILITY_SETS": "animation"`，重启服务后，core/all 增加 `apply_animation`（10/126项），cli仍116项。状态的 enabled_capability_sets 表示配置，capabilities 中的 apply_animation 表示双方已协商；旧版本需配套升级。默认不启用，不自动更改现有客户端配置。
+0.4.1 配套服务/扩展提供基础动画。在 MCP 客户端 env 中增加 `"ASEPRITE_MCP_CAPABILITY_SETS": "animation"`，重启服务后，core/all 增加 `apply_animation`（10/126项），cli仍116项。状态的 enabled_capability_sets 表示配置，capabilities 中的 apply_animation 表示双方已协商；旧版本需配套升级。默认不启用，不自动更改现有客户端配置。
 
 读取 get_document_info 的 revision 后调用：
 

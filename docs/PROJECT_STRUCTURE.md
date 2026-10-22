@@ -40,7 +40,7 @@ aseprite-mcp/
 │  │  └─ cli.lua             固定磁盘读取及批量普通 RGB 图层编辑脚本
 │  └─ tools/                 20 个上游 CLI 工具模块及 __init__.py，原名/参数保留
 ├─ extension/
-│  ├─ package.json           注册 main.lua 的 0.4.0 发布扩展清单
+│  ├─ package.json           注册 main.lua 的 0.4.1 发布扩展清单
 │  ├─ NOTICE.md              扩展包上游固定提交与许可归属
 │  ├─ main.lua               init/exit、延迟自动连接、菜单与重载清理
 │  ├─ bridge.lua             地址/端口设置、直接连接/重连/停止、握手与编辑端去重；无选文件UI
@@ -144,3 +144,5 @@ P2-M4验收复核：197项全量、61项无软件检查、真实无文件读取/
 2026-10-22 P3-M2：新增animation.lua与test_live_animation.py；config/protocol/server/live新增可选animation能力集，editor补时间轴指纹与删除帧上下文恢复。打包纳入第五个Lua，verify_install支持--port/--animation；实时测试夹具支持独立测试端口，CI纳入动画契约与矩阵校验。
 
 2026-10-22 PACK-M1：源码分发改为运行源码、Lua扩展、build_release.py、构建/锁文件、环境样例、README及MIT许可白名单。wheel/sdist/扩展统一拒绝docs、提示词、AGENTS/SKILL、执行计划和CONTRIBUTING；测试、CI及其他开发脚本不进入源码分发，完整开发测试从Git仓库运行。新增PACK.md/PACK-M1.md分发维护交接；origin为git@github.com:greenlogs/aseprite-mcp-live.git。仓库中的维护文档仍保留。
+
+2026-10-22 PACK-M2：服务/扩展/握手/样例统一0.4.1，新增PACK-M2发布交接；当前产物在dist，wheel和sdist已发布TestPyPI并核对公开SHA256，扩展包仍在本地。无产品目录/职责或启动入口变化，保持PACK-M1分发排除规则。
