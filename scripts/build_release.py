@@ -72,7 +72,8 @@ def inspect_artifacts(directory):
         manifest = json.loads(archive.read("package.json"))
         assert manifest["version"] == release_version
         assert manifest["contributes"]["scripts"] == [{"path": "./main.lua"}]
-        assert archive.read("LICENSE") == (ROOT / "LICENSE").read_bytes()
+        # Git archives and Windows checkouts can differ only in line endings.
+        assert archive.read("LICENSE").replace(b"\r\n", b"\n") == (ROOT / "LICENSE").read_bytes().replace(b"\r\n", b"\n")
     check_distribution_paths([*wheel_files, *source_files, *extension_files])
     requirements = directory / "requirements.txt"
     assert requirements.is_file() and "-e ." not in requirements.read_text(encoding="utf-8")
