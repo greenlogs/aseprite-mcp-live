@@ -6,6 +6,7 @@ import errno
 import json
 from contextlib import asynccontextmanager
 import logging
+import os
 
 from pydantic import ValidationError
 from websockets.asyncio.server import serve
@@ -50,10 +51,12 @@ class LiveBridge:
         self.server = None
         self.hello: Handshake | None = None
         self.url: str | None = None
+        self.mcp_handler = None
 
     def status(self):
         hello = self.hello
         return {"connected": self.executor.live is not None, "session_id": self.executor.session_id,
+                "mcp_mode": "shared" if self.mcp_handler is not None else "stdio", "service_pid": os.getpid(),
                 "service_version": SERVICE_VERSION, "extension_version": hello.extension_version if hello else None,
                 "connection_mode": "direct", "authentication": "none",
                 "protocol_version": 1, "capabilities": sorted(self.executor.live_capabilities),
@@ -109,6 +112,12 @@ class LiveBridge:
         return error.errno in {errno.EADDRINUSE, 10048} or getattr(error, "winerror", None) == 10048
 
     async def _handle(self, socket):
+        if socket.request.path == "/mcp":
+            if self.mcp_handler is None:
+                await socket.close(code=1008, reason="Use --shared to start a shared background service")
+            else:
+                await self.mcp_handler(socket)
+            return
         backend = None
         try:
             raw = await asyncio.wait_for(socket.recv(), self.config.limits.timeout_seconds)

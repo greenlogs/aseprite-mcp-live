@@ -101,7 +101,7 @@ def test_only_recognizes_service_entrypoints(executable, arguments, expected):
 def test_refuses_unverifiable_owner_without_signalling(monkeypatch, failure):
     calls = []
     owner = SimpleNamespace(pid=12345, username=lambda: "other" if failure == "other_user" else "same",
-                            terminate=lambda: calls.append("terminate"), wait=lambda **kwargs: None)
+                            cmdline=lambda: [], terminate=lambda: calls.append("terminate"), wait=lambda **kwargs: None)
     monkeypatch.setattr(takeover.psutil, "Process", lambda pid=None: owner if pid else SimpleNamespace(username=lambda: "same"))
     monkeypatch.setattr(takeover, "_is_service", lambda process: True)
     owners = iter([{12345}, {54321}])

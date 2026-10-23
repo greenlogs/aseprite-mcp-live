@@ -50,6 +50,8 @@ def terminate_previous_listener(host: str, port: int) -> None:
         process = psutil.Process(next(iter(owners)))
         if process.username() != psutil.Process().username() or not _is_service(process):
             raise OSError("Takeover refused: port belongs to another user or an unrecognized program")
+        if "--serve-shared" in process.cmdline():
+            raise OSError("Takeover refused: shared background is in use; connect with --shared")
         # Recheck the endpoint after inspecting the command line; never chase a
         # replacement process if ownership changed while we were checking it.
         current = _listener_pids(host, port)
