@@ -222,6 +222,18 @@ uvx --python 3.13 aseprite-mcp==0.5.0 --port 8766
 
 In your client configuration, append `--port` and `8766` to `args`, then set the extension's Port to `8766`. Local source execution also supports `uv run --locked aseprite-mcp --port 8766`.
 
+### Replace the previous connection (new in local source)
+
+With the current local source, append `--takeover` to the client's startup arguments:
+
+```json
+"args": ["--directory", "{source-path}", "run", "--locked", "aseprite-mcp", "--takeover"]
+```
+
+When a new MCP process starts, it can terminate a recognizable previous `aseprite-mcp` listener owned by the same user on the configured endpoint. The extension reconnects automatically and unsaved canvases remain open. Previous clients disconnect; the new connection must read document IDs and revisions again. Unrelated or unverifiable listeners are preserved and startup fails.
+
+This is disabled by default. You can also set `ASEPRITE_MCP_TAKEOVER=1`; `--no-takeover` overrides it. Each startup attempts takeover only once. Switching to an already open chat does not necessarily start a new process, and this does not provide simultaneous shared access. Unconfirmed edits may have completed before disconnection; inspect the canvas before retrying. This feature has not been published to PyPI and is absent from the `0.5.0` release. It has been verified only on Windows.
+
 ## Scope and behavior
 
 - Live drawing targets regular editable RGB layers. Unsupported edits involving non-RGB documents, locked layers, background layers, reference layers, or Tilemaps are rejected. Palettes, effects, tweening, and Tilemaps have not been migrated to live tools.
@@ -236,7 +248,7 @@ In your client configuration, append `--port` and `8766` to `args`, then set the
 | ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
 | `uv` or `uvx` is not found            | Reopen your terminal and client after installation, or use the executable's absolute path in the client configuration      |
 | Extension is disconnected             | Check that your MCP client started the server, the extension is enabled, WebSocket access is allowed, and both ports match |
-| Port is already in use                | Stop the duplicate server or change both the server and extension ports                                                    |
+| Port is already in use                | Stop the duplicate server; current source can use `--takeover` for a previous MCP listener; use another port for unrelated programs |
 | Version mismatch                      | Install matching server and extension versions; use `aseprite-mcp==0.5.0` to pin the server                                |
 | Missing document or revision conflict | Read the document list and information again using the current session and revision                                        |
 | Preview image is not displayed        | Check MCP image support in your client and reduce the preview region or scale                                              |

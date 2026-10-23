@@ -14,6 +14,7 @@ dependencies = [
     "pillow>=10.0.0",
     "python-dotenv>=1.0.1",
     "pydantic>=2.11,<3",
+    "psutil>=7.0.0",
     "websockets>=15,<16",
     "twine>=7.0.0",
 ]
