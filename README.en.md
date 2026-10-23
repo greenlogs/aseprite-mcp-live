@@ -73,7 +73,7 @@ uv python install 3.13
 
 Both server options require the matching extension:
 
-1. Visit [GitHub Releases](https://github.com/greenlogs/aseprite-mcp-live/releases) and download the `.aseprite-extension` file matching your server version. The current server version is **0.4.1**.
+1. Visit [GitHub Releases](https://github.com/greenlogs/aseprite-mcp-live/releases) and download the `.aseprite-extension` file matching your server version. The current server version is **0.5.0**.
 2. In Aseprite, open **Edit → Preferences → Extensions → Add Extension**, select the downloaded package, then install and enable it.
 
    <img src="./assets/step1.png" style="width: 50%; max-width: 100%; border-radius: 4px;" />
@@ -217,7 +217,7 @@ Set `ASEPRITE_MCP_TOOL_PROFILE` to choose the available tools:
 Change the server port with a startup argument:
 
 ```powershell
-uvx --python 3.13 aseprite-mcp==0.4.1 --port 8766
+uvx --python 3.13 aseprite-mcp==0.5.0 --port 8766
 ```
 
 In your client configuration, append `--port` and `8766` to `args`, then set the extension's Port to `8766`. Local source execution also supports `uv run --locked aseprite-mcp --port 8766`.
@@ -237,7 +237,7 @@ In your client configuration, append `--port` and `8766` to `args`, then set the
 | `uv` or `uvx` is not found            | Reopen your terminal and client after installation, or use the executable's absolute path in the client configuration      |
 | Extension is disconnected             | Check that your MCP client started the server, the extension is enabled, WebSocket access is allowed, and both ports match |
 | Port is already in use                | Stop the duplicate server or change both the server and extension ports                                                    |
-| Version mismatch                      | Install matching server and extension versions; use `aseprite-mcp==0.4.1` to pin the server                                |
+| Version mismatch                      | Install matching server and extension versions; use `aseprite-mcp==0.5.0` to pin the server                                |
 | Missing document or revision conflict | Read the document list and information again using the current session and revision                                        |
 | Preview image is not displayed        | Check MCP image support in your client and reduce the preview region or scale                                              |
 

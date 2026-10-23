@@ -15,7 +15,7 @@ def check():
     from aseprite_mcp.core.config import RuntimeConfig
     from aseprite_mcp.core.protocol import CAPABILITY_SETS
 
-    matrix = json.loads((ROOT / "docs/development/tool-compatibility.json").read_text(encoding="utf-8"))
+    matrix = json.loads((ROOT / "tests/fixtures/tool-compatibility.json").read_text(encoding="utf-8"))
     records = matrix["tools"]
     source_names = set()
     for path in (ROOT / "aseprite_mcp/tools").glob("*.py"):

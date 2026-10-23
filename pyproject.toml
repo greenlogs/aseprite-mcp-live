@@ -3,7 +3,7 @@ name = "aseprite-mcp"
 authors = [
     {name = "greenlogs", email = "tryz189853302550@gmail.com"},
 ]
-version = "0.4.1"
+version = "0.5.0"
 description = "Aseprite MCP with explicit CLI and live backend contracts"
 readme = "README.md"
 license = "MIT"

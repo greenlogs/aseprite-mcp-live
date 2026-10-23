@@ -1,6 +1,6 @@
 -- Aseprite 1.3.7 uses (message, data); do not require the newer error argument.
 local M = {}
-local EXTENSION_VERSION = "0.4.1"
+local EXTENSION_VERSION = "0.5.0"
 
 local function environment(name)
   local value=os.getenv(name)

@@ -73,7 +73,7 @@ uv python install 3.13
 
 两种服务启动方式都需要配套扩展：
 
-1. 前往 [GitHub Releases](https://github.com/greenlogs/aseprite-mcp-live/releases)，下载与服务版本一致的 `.aseprite-extension` 文件。当前服务版本为 **0.4.1**。
+1. 前往 [GitHub Releases](https://github.com/greenlogs/aseprite-mcp-live/releases)，下载与服务版本一致的 `.aseprite-extension` 文件。当前服务版本为 **0.5.0**。
 2. 在 Aseprite 中打开 **Edit → Preferences → Extensions → Add Extension**，选择下载的扩展包，安装并启用。
 
     <img src="./assets/step1.png" style="width: 50%; max-width: 100%; border-radius: 4px;" />
@@ -217,7 +217,7 @@ Python MCP 服务通过 stdio 与客户端通信；Lua 扩展通过本机 WebSoc
 通过启动参数修改服务端口，例如：
 
 ```powershell
-uvx --python 3.13 aseprite-mcp==0.4.1 --port 8766
+uvx --python 3.13 aseprite-mcp==0.5.0 --port 8766
 ```
 
 客户端配置中将 `--port`、`8766` 追加到 `args`，并在扩展设置中把 Port 改为 `8766`。本地源码运行同样支持 `uv run --locked aseprite-mcp --port 8766`。
@@ -237,7 +237,7 @@ uvx --python 3.13 aseprite-mcp==0.4.1 --port 8766
 | 找不到 `uv` 或 `uvx` | 安装后重开终端与客户端，或在客户端配置中使用可执行文件的绝对路径            |
 | 扩展未连接           | 确认服务已由 MCP 客户端启动、扩展已启用、WebSocket 权限已允许，双方端口一致 |
 | 端口被占用           | 关闭重复服务，或同时修改服务与扩展端口                                      |
-| 版本不匹配           | 安装同版本的服务和扩展；可使用 `aseprite-mcp==0.4.1` 固定版本               |
+| 版本不匹配           | 安装同版本的服务和扩展；可使用 `aseprite-mcp==0.5.0` 固定版本               |
 | 找不到文档或修订冲突 | 重新读取文档列表与信息，使用当前会话和修订                                  |
 | 预览图片未显示       | 确认客户端支持 MCP 图片内容，并缩小预览区域或缩放倍数                       |
 

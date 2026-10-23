@@ -8,6 +8,21 @@
 /.mcp.json
 /.codex/
 /.agents/
+# Local development notes and AI instructions (keep local copies)
+/docs/
+EXECUTION_PLAN*
+CONTRIBUTING*
+AGENTS.md
+SKILL.md
+CLAUDE.md
+GEMINI.md
+执行计划*
+prompts/
+.claude/
+.cursor/
+.cursorrules
+.github/copilot-instructions.md
+.github/instructions/
 # Python, test and build outputs
 /.venv/
 __pycache__/

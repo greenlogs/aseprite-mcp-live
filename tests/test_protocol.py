@@ -195,7 +195,7 @@ def test_live_deadline_distinguishes_unknown_edit():
 
 
 def test_frozen_protocol_examples():
-    examples = json.loads((Path(__file__).parents[1] / "docs/development/protocol-v1.examples.json").read_text(encoding="utf-8"))
+    examples = json.loads((Path(__file__).parents[1] / "tests/fixtures/protocol-v1.examples.json").read_text(encoding="utf-8"))
     parsed_hello = Handshake.model_validate_json(json.dumps(examples["hello"]))
     welcome = Welcome.model_validate_json(json.dumps(examples["welcome"]))
     assert set(welcome.capabilities) == negotiate(parsed_hello)

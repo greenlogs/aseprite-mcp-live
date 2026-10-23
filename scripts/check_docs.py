@@ -1,4 +1,4 @@
-"""Check local Markdown links, public entry points and documented modules."""
+"""Check Markdown links and entry points; optionally check local structure notes."""
 from pathlib import Path
 import re
 import tomllib
@@ -32,14 +32,16 @@ def check():
                     errors.append(f"{path.relative_to(ROOT)}: missing anchor {link}")
     config = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
     assert config["project"]["scripts"]["aseprite-mcp"] == "aseprite_mcp.__main__:main"
-    structure = (ROOT / "docs/PROJECT_STRUCTURE.md").read_text(encoding="utf-8")
-    for folder in ("aseprite_mcp/core", "aseprite_mcp/backends", "extension", "scripts"):
-        for path in (ROOT / folder).iterdir():
-            if path.is_file() and path.suffix in {".py", ".lua"} and path.name not in structure:
-                errors.append(f"Undocumented module: {path.relative_to(ROOT)}")
+    structure_path = ROOT / "docs/PROJECT_STRUCTURE.md"
+    if structure_path.is_file():
+        structure = structure_path.read_text(encoding="utf-8")
+        for folder in ("aseprite_mcp/core", "aseprite_mcp/backends", "extension", "scripts"):
+            for path in (ROOT / folder).iterdir():
+                if path.is_file() and path.suffix in {".py", ".lua"} and path.name not in structure:
+                    errors.append(f"Undocumented module: {path.relative_to(ROOT)}")
     assert not errors, "\n".join(errors)
     return len(files)
 
 
 if __name__ == "__main__":
-    print(f"Checked {check()} Markdown files, entry point and module index")
+    print(f"Checked {check()} Markdown files and entry point (local structure notes if present)")

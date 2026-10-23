@@ -10,7 +10,7 @@
       "apply_operations",
       "get_preview"
     ],
-    "extension_version": "0.4.1"
+    "extension_version": "0.5.0"
   },
   "welcome": {
     "type": "welcome",
