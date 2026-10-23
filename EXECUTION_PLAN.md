@@ -60,3 +60,7 @@
 - [x] [PACK-M2 · 0.4.1 TestPyPI发布](docs/progress/PACK-M2.md)
 
 - [x] [PACK-M3 · 修复干净检出 CI 临时目录](docs/progress/PACK-M3.md)
+
+- [x] [PACK-M4 · 限定 MCP SDK 主版本](docs/progress/PACK-M4.md)
+
+2026-10-23：MCP SDK 依赖限定为 `>=1.6.0,<2`，保留锁定 1.6.0；34项契约/工具注册与安装元数据检查通过，未发布新包。
