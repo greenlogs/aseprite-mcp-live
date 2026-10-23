@@ -1,6 +1,6 @@
 # 动态项目结构
 
-最近复核：2026-10-23，PACK-M4 MCP SDK 依赖范围修正。结构说明唯一来源；实际与规划分开。
+最近复核：2026-10-23，P1-M4 批次收尾刷新维护。结构说明唯一来源；实际与规划分开。
 
 ## 实际结构
 
@@ -43,7 +43,7 @@ aseprite-mcp/
 │  ├─ NOTICE.md              扩展包上游固定提交与许可归属
 │  ├─ main.lua               init/exit、延迟自动连接、菜单与重载清理
 │  ├─ bridge.lua             地址/端口设置、直接连接/重连/停止、握手与编辑端去重；无选文件UI
-│  ├─ editor.lua             文档/图层注册、事件修订、事务/历史与保存
+│  ├─ editor.lua             文档/图层注册、事件修订、事务/历史、批次收尾刷新与保存
 │  ├─ animation.lua          可选基础动画、元数据指纹、预算及顺序预校验
 │  └─ preview.lua            独立 Image 合成与内存 PNG/base64 编码
 ├─ tests/
@@ -53,7 +53,7 @@ aseprite-mcp/
 │  ├─ test_reliability.py   取消/断线/迟到回执/磁盘修订及真实 UI 故障恢复
 │  ├─ test_protocol.py       协议、错误映射、模拟 live、去重与样例
 │  ├─ test_cli_backend.py    真实 CLI 纵向路径与进程/产物故障模拟
-│  ├─ live_support.py        独立 UI 进程与仅测试使用的手工动作控制夹具
+│  ├─ live_support.py        独立 UI 进程、手工动作控制与转发真实 API 的刷新计数探针
 │  ├─ test_live_preview.py   真实 MCP 图片/阶段集成与真实上限拒绝
 │  ├─ test_live_animation.py 可选能力契约与真实MCP/UI/CLI/关联Cel/历史回归
 │  ├─ test_live_editor.py    真实文档、Cel、事务回滚、历史与保存
@@ -154,3 +154,5 @@ P2-M4验收复核：197项全量、61项无软件检查、真实无文件读取/
 2026-10-22 PACK-M3：check.yml 在 pytest 前创建被忽略的 .work 父目录；TESTING 同步手工复现步骤。新增 PACK-M3 交接并同步分发维护总结和根计划；无产品目录、公共接口或依赖变化。本地干净副本71项检查及文档/能力/打包通过，远程修复重跑未执行。
 
 2026-10-23 PACK-M4：pyproject.toml 为 mcp[cli] 增加 <2 上限，uv.lock 同步依赖声明并保留 1.6.0 及其他已锁版本；新增分发维护交接并同步根计划和维护总结。无运行模块、公共接口或启动入口变化，未发布新包。
+
+2026-10-23 P1-M4：editor.lua 在绘图/动画及撤销/重做收尾恢复上下文后刷新一次，失败回滚也刷新并保留原错误。live_support.py 增加仅用于测试的真实 refresh 转发/计数，既有编辑与动画测试增加频率/上下文/去重断言。新增P1-M4交接，根计划、P1提示词与阶段总结同步；27项相关回归通过。无目录、公共接口、依赖或启动/测试/打包入口变化，本地修复扩展在.work/refresh-extension，未发布。

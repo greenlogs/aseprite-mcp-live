@@ -113,7 +113,7 @@ function M.new(limits,preview,animation,animation_enabled)
     data.selection={empty=sprite.selection.isEmpty,x=bounds.x,y=bounds.y,width=bounds.width,height=bounds.height}
     return data
   end
-  function self:with_target(sprite,callback)
+  function self:with_target(sprite,callback,refresh)
     local old_sprite,old_layer,old_frame=app.activeSprite,app.activeLayer,app.activeFrame
     local old_frame_number=old_frame and old_frame.frameNumber
     local previous=self.suppress_context; self.suppress_context=true
@@ -130,8 +130,13 @@ function M.new(limits,preview,animation,animation_enabled)
       end
     end)
     self.suppress_context=previous
+    -- Socket callbacks do not automatically invalidate the editor canvas.
+    -- Refresh once after commit/rollback and context restoration, never per pixel.
+    local refreshed,refresh_error=true,nil
+    if refresh then refreshed,refresh_error=pcall(app.refresh) end
     if not ok then error(value,0) end
     if not restored then fail("EXECUTION_FAILED","Could not restore active context: "..tostring(restore_error)) end
+    if not refreshed then fail("EXECUTION_FAILED","Could not refresh editor: "..tostring(refresh_error)) end
     return value
   end
   function self:resolve(record,op,refs)
@@ -263,7 +268,7 @@ function M.new(limits,preview,animation,animation_enabled)
             end
           end
         end)
-      end)
+      end,true)
       self:sync()
       local layer_refs={}
       for ref,layer in pairs(refs) do layer_refs[ref]=assert(find(record.layers,layer)).id end
@@ -280,7 +285,7 @@ function M.new(limits,preview,animation,animation_enabled)
           end
           for _,op in ipairs(action.operations) do self.animation.apply_one(sprite,op,check_time) end
         end)
-      end)
+      end,true)
       self:sync()
       local data=animation.metadata(sprite);data.operations=#action.operations;data.frames=#sprite.frames
       return data,record
@@ -304,7 +309,7 @@ function M.new(limits,preview,animation,animation_enabled)
       local before=record.revision
       self:with_target(sprite,function()
         if action.name=="undo" then app.undo() else app.redo() end
-      end)
+      end,true)
       self:sync()
       return {applied=record.revision~=before,
         message="History acts on the document's latest action, including manual edits"},record

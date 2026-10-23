@@ -10,7 +10,7 @@ from aseprite_mcp.core.config import RuntimeConfig
 from aseprite_mcp.core.execution import Executor
 from aseprite_mcp.core.protocol import Request
 from conftest import run
-from live_support import live_port, editor_process, until
+from live_support import live_port, editor_process, until, track_refresh
 
 
 @pytest.mark.real
@@ -23,6 +23,7 @@ def test_real_documents_transactions_history_save(tmp_path, monkeypatch):
             await until(lambda: executor.live is not None)
             # Welcome is processed asynchronously on the editor's UI thread.
             await until(lambda: bridge.hello is not None)
+            await track_refresh(manual)
 
             async def call(name, document=None, revision=None, **args):
                 request = {"request_id": str(uuid4()), "target": {"backend": "live", "session_id": executor.session_id},
@@ -50,6 +51,7 @@ def test_real_documents_transactions_history_save(tmp_path, monkeypatch):
             other = await call("create_sprite", width=3, height=3)
             assert other.ok
             await manual("test_other=app.activeSprite; return true")
+            assert await manual('return test_refresh_count') == 0
             operations = [
                 {"op": "create_layer", "ref": "a", "name": "重复"},
                 {"op": "create_layer", "ref": "b", "name": "重复"},
@@ -62,6 +64,10 @@ def test_real_documents_transactions_history_save(tmp_path, monkeypatch):
             edited = await call("apply_operations", document, revision, operations=operations)
             assert edited.ok, edited
             assert edited.revision > revision
+            assert await manual('''
+return test_refresh_count==1 and test_refresh_sprite==test_other
+  and test_refresh_layer==app.activeLayer and test_refresh_frame==app.activeFrame
+''')
             refs = edited.data["layer_refs"]
             assert refs["a"] != refs["b"]
             snapshot = await manual('''
@@ -75,9 +81,11 @@ return {active_other=app.activeSprite==test_other,layers=#s.layers,modified=s.is
             undone = await call("undo", document, edited.revision)
             assert undone.ok and undone.data["applied"], undone
             assert await manual('return #test_first.layers') == 1
+            assert await manual('return test_refresh_count') == 2
             redone = await call("redo", document, undone.revision)
             assert redone.ok and redone.data["applied"]
             assert await manual('return #test_first.layers') == 3
+            assert await manual('return test_refresh_count') == 3
             info = await call("get_document_info", document)
             assert [l["name"] for l in info.data["layers"]][1:] == ["重复", "重复"]
             # Registry identity survives repeated enumeration and rename.
@@ -99,6 +107,8 @@ return true
 ''')
             failed = await call("apply_operations", document, info.revision, operations=operations[:2])
             assert failed.error.code == "EXECUTION_FAILED"
+            assert "injected transaction failure" in failed.error.message
+            assert await manual('return test_refresh_count==4 and test_refresh_sprite==test_other')
             assert await manual('local e=__aseprite_mcp_live.editor;e.apply_one=e.original_apply;return #test_first.layers') == 3
             # Offset Cel and empty Cel; preserve off-canvas source pixels.
             await manual('''
@@ -112,6 +122,7 @@ s:newCel(l,1,i,Point(-1,4)); s:newEmptyFrame(); return true
                        "x": 2, "y": 5, "rgba": [80, 90, 100, 255]} for f in [1, 2]]
             result = await call("apply_operations", document, info.revision, operations=pixels)
             assert result.ok, result
+            assert await manual('return test_refresh_count') == 5
             assert await manual('''
 local s=test_first;local l=s.layers[4];local c=l:cel(1)
 return {left=c.position.x,top=c.position.y,old=c.image:getPixel(0,0),
@@ -156,6 +167,7 @@ return {left=c.position.x,top=c.position.y,old=c.image:getPixel(0,0),
             second = await executor.live.execute(request)
             assert first.ok and first == second
             assert await manual('return #test_first.layers') == 5
+            assert await manual('return test_refresh_count') == 6
             changed = request.model_copy(update={"expected_revision": first.revision})
             assert (await executor.live.execute(changed)).error.code == "REQUEST_CONFLICT"
             # Save is explicit, absolute, native-format and overwrite guarded.
@@ -174,5 +186,7 @@ return {left=c.position.x,top=c.position.y,old=c.image:getPixel(0,0),
             await manual('test_first:close();return true')
             assert (await call("get_document_info", document)).error.code == "INVALID_TARGET"
             assert (await call("get_document_info", other.data["document_id"])).ok
+            # Reads, preflight rejections, duplicate receipts and saves do not redraw.
+            assert await manual('return test_refresh_count') == 6
 
     run(scenario())

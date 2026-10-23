@@ -20,7 +20,7 @@ from aseprite_mcp.core.protocol import Handshake, LIVE_CAPABILITIES, Limits, Res
 from aseprite_mcp.server import create_server
 from aseprite_mcp.tools import animation
 from conftest import run
-from live_support import editor_process
+from live_support import editor_process, track_refresh
 
 
 def linked_sprite(path):
@@ -126,6 +126,7 @@ def test_real_animation_mcp_history_preview_cli_and_failures(tmp_path):
                         await asyncio.sleep(.04)
                 assert "apply_animation" in status["capabilities"]
                 session = status["session_id"]
+                await track_refresh(manual)
 
                 async def call(name, error=None, **args):
                     response = await client.call_tool(name, {"session_id": session, **args})
@@ -178,10 +179,12 @@ return true
                 added = await call("apply_animation", document_id=document, expected_revision=current["revision"],
                                    operations=batch, request_id="animation-dedup")
                 assert added["data"]["frames"] == 3
+                assert await manual('return test_refresh_count==1 and test_refresh_sprite==test_anim_other')
                 assert added["data"]["frame_durations_ms"] == [100, 220, 220]
                 assert added["data"]["tags"] == [{"name": "走路", "from_frame": 1, "to_frame": 3, "direction": "pingpong"}]
                 assert await call("apply_animation", document_id=document, expected_revision=current["revision"],
                                   operations=batch, request_id="animation-dedup") == added
+                assert await manual('return test_refresh_count') == 1
                 assert await manual('return app.activeSprite==test_anim_other')
                 for frame in [1, 2, 3]:
                     assert await preview(frame, f"frame-{frame}") == before

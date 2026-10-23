@@ -22,6 +22,29 @@ async def until(predicate, timeout=15):
             await asyncio.sleep(.04)
 
 
+async def track_refresh(manual):
+    """Count extension refreshes while still invoking the real API 28 redraw."""
+    await manual('''
+local bridge=__aseprite_mcp_live
+local old=bridge.editor
+local source=debug.getinfo(old.execute,"S").source:sub(2)
+test_refresh_count=0
+local proxy=setmetatable({refresh=function()
+  test_refresh_count=test_refresh_count+1
+  test_refresh_sprite=app.activeSprite
+  test_refresh_layer=app.activeLayer
+  test_refresh_frame=app.activeFrame
+  return app.refresh()
+end},{__index=app,__newindex=function(_,key,value) app[key]=value end})
+local environment=setmetatable({app=proxy},{__index=_G})
+local module=assert(loadfile(source,"t",environment))()
+old:close()
+local preview=dofile(app.fs.joinPath(app.fs.filePath(source),"preview.lua"))
+bridge.editor=module.new(bridge.limits,preview,old.animation,old.animation_enabled)
+return true
+''')
+
+
 @asynccontextmanager
 async def editor_process(directory):
     user = directory / "user"

@@ -22,6 +22,9 @@
 - [x] [P1-M1 · 扩展连接](docs/development/prompts/P1-实时核心闭环.md#p1-m1)
 - [x] [P1-M2 · 文档及事务编辑](docs/development/prompts/P1-实时核心闭环.md#p1-m2)
 - [x] [P1-M3 · 图片预览与集成](docs/development/prompts/P1-实时核心闭环.md#p1-m3)
+- [x] [P1-M4 · 批次完成后刷新画布（维护）](docs/development/prompts/P1-实时核心闭环.md#p1-m4)
+
+2026-10-23：每批绘图/动画及历史操作收尾刷新一次，27项相关回归通过；[维护交接](docs/progress/P1-M4.md)。
 
 ## P2 · 稳定性与首版发布
 
