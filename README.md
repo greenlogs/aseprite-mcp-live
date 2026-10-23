@@ -18,9 +18,16 @@
 
 Aseprite MCP 将支持 MCP 的客户端如`Codex`，`CluadeCode`，`DeepseekHarness`等Agent与 Aseprite 连接起来，支持读取和编辑未保存画布、图片预览、撤销重做及可选基础动画，让你在同一文档中继续创作。同时保留 CLI 磁盘文件处理能力。
 
+<div align="center">
+  <img src="./assets/preview1.gif" style="width: 50%; max-width: 100%; border-radius: 4px;" />
+</div>
+<div align="center">
+  <img src="./assets/preview2.png" style="width: 50%; max-width: 100%; border-radius: 4px;" />
+</div>
+
 [PyPI 安装包](https://pypi.org/project/aseprite-mcp/) · [Release 扩展下载](https://github.com/greenlogs/aseprite-mcp-live/releases) · [问题反馈](https://github.com/greenlogs/aseprite-mcp-live/issues)
 
-**Windows + Aseprite 1.3.7+** 验证；Aseprite 需自行安装，不随项目分发。
+**Windows Aseprite 1.3+** 验证；Aseprite 需自行安装，不随项目分发。
 
 ## 快速开始
 
@@ -69,19 +76,25 @@ uv python install 3.13
 1. 前往 [GitHub Releases](https://github.com/greenlogs/aseprite-mcp-live/releases)，下载与服务版本一致的 `.aseprite-extension` 文件。当前服务版本为 **0.4.1**。
 2. 在 Aseprite 中打开 **Edit → Preferences → Extensions → Add Extension**，选择下载的扩展包，安装并启用。
 
-   ![安装扩展步骤](./assets/step1.png)
-   ![安装扩展步骤](./assets/step2.png)
+    <img src="./assets/step1.png" style="width: 50%; max-width: 100%; border-radius: 4px;" />
+    <img src="./assets/step2.png" style="width: 50%; max-width: 100%; border-radius: 4px;" />
 
    查看脚本状态：
 
-   ![安装扩展步骤](./assets/step3.png)
-   ![安装扩展步骤](./assets/step4.png)
+    <img src="./assets/step3.png" style="width: 50%; max-width: 100%; border-radius: 4px;" />
+    <img src="./assets/step4.png" style="width: 50%; max-width: 100%; border-radius: 4px;" />
+    <img src="./assets/step6.png" style="width: 50%; max-width: 100%; border-radius: 4px;" />
 
    `status` 出现 Connected 状态表示扩展已成功连接服务
 
-   ![安装扩展步骤](./assets/step5.png)
+    <img src="./assets/step5.png" style="width: 50%; max-width: 100%; border-radius: 4px;" />
 
 3. 重启 Aseprite，首次连接时按权限提示允许扩展使用本机 WebSocket。
+
+`注意事项`：
+
+- 1.若MCP连接正常但获取不到工具状态，尝试重启Agent客户端，尽量先让Aseprite先启动。
+- 2.Agent工作时，尽量不要在画布上绘制，以免干扰实时协作。
 
 扩展默认自动连接 `127.0.0.1:8765`。在 **File → Scripts → MCP: Connect / Settings** 中可查看状态、调整端口或断开连接，无需选择连接文件。
 
