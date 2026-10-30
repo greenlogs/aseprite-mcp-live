@@ -75,8 +75,8 @@ async def serve_mcp(socket, server):
 
 
 async def run_shared_server(config: RuntimeConfig, profile: str, *, idle_timeout: float = 300):
-    if config.takeover or profile not in {"core", "all"}:
-        raise ValueError("Shared mode requires core/all and cannot be combined with --takeover")
+    if profile not in {"core", "all"}:
+        raise ValueError("Shared editor mode requires core/all")
     bridge = LiveBridge(Executor(CliBackend(config.limits), config.limits,
                                  capability_sets=config.capability_sets), config)
     server = create_server(profile, config=config, bridge=bridge)
@@ -111,13 +111,13 @@ async def run_shared_server(config: RuntimeConfig, profile: str, *, idle_timeout
 
 def start_background(config: RuntimeConfig, profile: str) -> subprocess.Popen:
     """Detached stdio ensures closing a proxy cannot close the background."""
-    env = dict(os.environ, ASEPRITE_MCP_TOOL_PROFILE=profile, ASEPRITE_MCP_TAKEOVER="0",
+    env = dict(os.environ, ASEPRITE_MCP_TOOL_PROFILE=profile,
                ASEPRITE_MCP_CAPABILITY_SETS=",".join(sorted(config.capability_sets)))
     for name, value in config.limits.model_dump().items():
         env[f"ASEPRITE_MCP_{name.upper()}"] = str(value)
     options = {"creationflags": subprocess.CREATE_NO_WINDOW | subprocess.CREATE_NEW_PROCESS_GROUP} if os.name == "nt" else {"start_new_session": True}
     return subprocess.Popen([sys.executable, "-m", "aseprite_mcp", "--serve-shared", "--host", config.host,
-                             "--port", str(config.port), "--no-takeover"], env=env,
+                             "--port", str(config.port)], env=env,
                             stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                             close_fds=True, **options)
 
@@ -125,8 +125,8 @@ def start_background(config: RuntimeConfig, profile: str) -> subprocess.Popen:
 @asynccontextmanager
 async def shared_connection(config: RuntimeConfig, profile: str):
     """Only startup is retried; an established connection is never replayed."""
-    if config.takeover or profile not in {"core", "all"}:
-        raise ValueError("Shared mode requires core/all and cannot be combined with --takeover")
+    if profile not in {"core", "all"}:
+        raise ValueError("Shared editor mode requires core/all")
     host = f"[{config.host}]" if ":" in config.host else config.host
     url = f"ws://{host}:{config.port}/mcp"
     deadline = asyncio.get_running_loop().time() + 10

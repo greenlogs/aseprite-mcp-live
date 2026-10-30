@@ -3,7 +3,7 @@ import argparse
 import asyncio
 import base64
 import gc
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, contextmanager
 from datetime import timedelta
 import hashlib
 import io
@@ -11,6 +11,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import socket
 import time
 import zipfile
 
@@ -92,6 +93,30 @@ end};test_timer:start()
                     await asyncio.to_thread(process.wait, 5)
 
 
+@contextmanager
+def installed_background(python, env, directory, port, errors):
+    """Own only this acceptance run's background, so no test service is left."""
+    process = subprocess.Popen([str(python), "-I", "-m", "aseprite_mcp", "--serve-shared"],
+        env=env, cwd=directory, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+        stderr=errors, creationflags=subprocess.CREATE_NO_WINDOW)
+    try:
+        deadline = time.monotonic() + 15
+        while True:
+            assert process.poll() is None, "Isolated acceptance background failed to start"
+            try:
+                with socket.create_connection(("127.0.0.1", port), timeout=.2):
+                    break
+            except OSError:
+                if time.monotonic() >= deadline:
+                    raise TimeoutError("Isolated acceptance background did not listen")
+                time.sleep(.05)
+        yield
+    finally:
+        if process.poll() is None:
+            process.terminate()
+        process.wait(timeout=5)
+
+
 async def verify(python, extension, aseprite, directory, port=8765, animation=False):
     assert os.name == "nt", "This real GUI harness is validated on Windows only"
     directory.mkdir(parents=True, exist_ok=False)
@@ -107,7 +132,7 @@ async def verify(python, extension, aseprite, directory, port=8765, animation=Fa
     evidence = {"versions": versions, "checks": [], "timings_ms": {}}
     gallery = []
     parameters = StdioServerParameters(command=str(python), args=["-I", "-m", "aseprite_mcp"], env=env, cwd=str(directory))
-    with (directory / "server-stderr.log").open("w") as errors:
+    with (directory / "server-stderr.log").open("w") as errors, installed_background(python, env, directory, port, errors):
         started = time.perf_counter()
         async with stdio_client(parameters, errlog=errors) as streams, ClientSession(*streams, read_timeout_seconds=timedelta(seconds=30)) as client:
             await client.initialize()
@@ -126,6 +151,7 @@ async def verify(python, extension, aseprite, directory, port=8765, animation=Fa
                 evidence["editor"] = {key: status[key] for key in ("aseprite_version", "api_version", "service_version", "extension_version")}
                 assert status["extension_version"] == versions["service"]
                 assert status["connection_mode"] == "direct"
+                assert status["mcp_mode"] == "shared"
                 assert status["authentication"] == "none" and "connection_file" not in status
                 session = status["session_id"]
 

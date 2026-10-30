@@ -16,6 +16,7 @@ from aseprite_mcp.core.protocol import Handshake
 from websockets.exceptions import InvalidStatus
 from conftest import run
 from live_support import live_port, editor_process, until
+import psutil
 
 
 def test_cli_overrides_env_and_defaults(monkeypatch):
@@ -27,13 +28,11 @@ def test_cli_overrides_env_and_defaults(monkeypatch):
     monkeypatch.setenv("ASEPRITE_MCP_PORT", "8766")
     assert (RuntimeConfig.from_env().host, RuntimeConfig.from_env().port) == ("::1", 8766)
     captured = []
-    class Server:
-        def run(self, **kwargs):
-            assert kwargs == {"transport": "stdio"}
-    def create(**kwargs):
-        captured.append(kwargs["config"])
-        return Server()
-    monkeypatch.setattr(entry, "create_server", create)
+    async def proxy(config, profile):
+        captured.append(config)
+        assert profile == "core"
+    monkeypatch.setenv("ASEPRITE_MCP_TOOL_PROFILE", "core")
+    monkeypatch.setattr("aseprite_mcp.shared.run_shared_proxy", proxy)
     main(["--host", "localhost", "--port", "8767"])
     assert (captured[0].host, captured[0].port) == ("127.0.0.1", 8767)
     for args in [["--host", "0.0.0.0"], ["--port", "0"], ["--port", "-1"], ["--port", "65536"], ["--port", "bad"], ["--prot", "8765"]]:
@@ -122,7 +121,21 @@ def test_real_stdio_force_kill_restart_without_selecting_file(tmp_path, monkeypa
                 assert not (await client.call_tool("create_sprite", {"session_id": first["session_id"], "width": 8, "height": 8})).isError
             gc.collect()
             await asyncio.sleep(.1)
-            # The SDK force-killed its child. No unlink, token transfer or UI action.
+            # Killing the stdio proxy must leave the shared editor session intact.
+            async with stdio_client(params) as streams, ClientSession(*streams) as client:
+                await client.initialize()
+                retained = await connected(client)
+                assert retained["session_id"] == first["session_id"]
+                assert retained["service_pid"] == first["service_pid"]
+            gc.collect()
+            await asyncio.sleep(.1)
+            # Explicitly crash only this isolated test's background, then prove
+            # a new default proxy starts it again without a connection file.
+            previous = psutil.Process(first["service_pid"])
+            assert "--serve-shared" in previous.cmdline()
+            assert previous.environ()["ASEPRITE_MCP_TEST_OWNER"] == os.environ["ASEPRITE_MCP_TEST_OWNER"]
+            previous.terminate()
+            await asyncio.to_thread(previous.wait, 5)
             async with stdio_client(params) as streams, ClientSession(*streams) as client:
                 await client.initialize()
                 second = await connected(client)

@@ -224,17 +224,17 @@ In your client configuration, append `--port` and `8766` to `args`, then set the
 
 ### Share the connection across chats (new in local source)
 
-With the current local source, append `--shared` and `--no-takeover` to the client's startup arguments:
+The current local source uses shared mode by default for `core` and `all`. No mode argument is needed:
 
 ```json
-"args": ["--directory", "{source-path}", "run", "--locked", "aseprite-mcp", "--shared", "--no-takeover"]
+"args": ["--directory", "{source-path}", "run", "--locked", "aseprite-mcp"]
 ```
 
 Each chat has its own stdio proxy and starts or reuses one background service. The service still connects to Aseprite on local port `8765`; no extension change is needed. Starting another chat or closing one proxy preserves the other connections. Clients share documents, the editing queue and revision checks. Refresh document state after a conflict. Tool profiles, animation capabilities, limits and Aseprite paths must match; incompatible configurations are rejected.
 
 The background exits after all clients disconnect and it remains idle for five minutes, then starts again when needed. Unrelated programs and ordinary single-client MCP listeners are preserved; stop the previous service before enabling shared mode. Background failure closes the proxies. Reconnect the MCP client and inspect the canvas before retrying edits; writes are never replayed automatically. A chat whose transport is already closed must establish a new MCP connection, which may require restarting the client.
 
-`--takeover` remains an optional manual setting for a single client. It defaults to off, cannot be combined with shared mode, and refuses to terminate a shared background. It disconnects old clients and is unsuitable for multiple Codex chats. These new options are not included in the published `0.5.0` package and have been verified only on Windows.
+The current local source supports shared live connections only. `--shared` remains a compatibility alias. The old `--takeover` and `--no-takeover` arguments have been removed; delete them from existing client configurations. The former takeover environment setting is no longer read. The `cli` tool profile still provides disk tools over stdio without an editor listener. These source changes are not included in the published `0.5.0` package and have been verified only on Windows.
 
 ## Scope and behavior
 
@@ -250,7 +250,7 @@ The background exits after all clients disconnect and it remains idle for five m
 | ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
 | `uv` or `uvx` is not found            | Reopen your terminal and client after installation, or use the executable's absolute path in the client configuration      |
 | Extension is disconnected             | Check that your MCP client started the server, the extension is enabled, WebSocket access is allowed, and both ports match |
-| Port is already in use                | Use current source with `--shared --no-takeover` for multiple chats; stop an older direct service or use another port for unrelated programs |
+| Port is already in use                | Current source shares live connections by default; stop an older direct service or use another port for unrelated programs |
 | `Transport closed`                   | The old MCP channel ended; enable shared mode and establish a new client connection, restarting the client if needed |
 | Version mismatch                      | Install matching server and extension versions; use `aseprite-mcp==0.5.0` to pin the server                                |
 | Missing document or revision conflict | Read the document list and information again using the current session and revision                                        |

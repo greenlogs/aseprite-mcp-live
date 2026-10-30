@@ -15,11 +15,10 @@ import psutil
 import pytest
 
 from aseprite_mcp.__main__ import main
-from aseprite_mcp.backends.takeover import _listener_pids, terminate_previous_listener
 from aseprite_mcp.core.config import RuntimeConfig
 from aseprite_mcp.shared import run_shared_server, shared_connection
 from conftest import run
-from live_support import editor_process, live_port, until
+from live_support import editor_process, live_port, until, listener_pids
 
 
 def unused_port():
@@ -31,8 +30,8 @@ def unused_port():
 @asynccontextmanager
 async def client(port, *, profile="core"):
     params = StdioServerParameters(command=sys.executable,
-        args=["-m", "aseprite_mcp", "--shared", "--port", str(port), "--no-takeover"],
-        env=dict(os.environ, ASEPRITE_MCP_TOOL_PROFILE=profile, ASEPRITE_MCP_TAKEOVER="0"))
+        args=["-m", "aseprite_mcp", "--port", str(port)],
+        env=dict(os.environ, ASEPRITE_MCP_TOOL_PROFILE=profile))
     async with stdio_client(params) as streams, ClientSession(*streams, read_timeout_seconds=timedelta(seconds=15)) as session:
         await session.initialize()
         yield session
@@ -42,10 +41,11 @@ async def client(port, *, profile="core"):
 
 def stop_test_background(port):
     # Only this test's isolated port and recognizable shared child may be stopped.
-    for pid in _listener_pids("127.0.0.1", port):
+    for pid in listener_pids("127.0.0.1", port):
         assert pid and pid != os.getpid()
         process = psutil.Process(pid)
         assert "--serve-shared" in process.cmdline()
+        assert process.environ()["ASEPRITE_MCP_TEST_OWNER"] == os.environ["ASEPRITE_MCP_TEST_OWNER"]
         process.terminate()
         process.wait(timeout=5)
 
@@ -62,15 +62,30 @@ async def tool(session, name, **args):
     return json.loads(result.content[0].text)
 
 
-def test_shared_rejects_takeover_and_cli_mode(monkeypatch):
-    monkeypatch.setenv("ASEPRITE_MCP_TAKEOVER", "0")
-    with pytest.raises(SystemExit) as error:
-        main(["--shared", "--takeover"])
-    assert error.value.code == 2
+def test_removed_takeover_flags_and_cli_shared_rejected(monkeypatch):
+    for argument in ["--takeover", "--no-takeover"]:
+        with pytest.raises(SystemExit) as error:
+            main([argument])
+        assert error.value.code == 2
     monkeypatch.setenv("ASEPRITE_MCP_TOOL_PROFILE", "cli")
     with pytest.raises(SystemExit) as error:
         main(["--shared"])
     assert error.value.code == 2
+
+
+@pytest.mark.parametrize("arguments", [[], ["--shared"]])
+def test_live_entrypoint_always_uses_shared_proxy(monkeypatch, arguments):
+    called = []
+    monkeypatch.setenv("ASEPRITE_MCP_TOOL_PROFILE", "core")
+    # A leftover setting must never restore the removed behaviour.
+    monkeypatch.setenv("ASEPRITE_MCP_TAKEOVER", "1")
+    async def proxy(config, profile):
+        called.append(profile)
+        assert not hasattr(config, "takeover")
+    monkeypatch.setattr("aseprite_mcp.shared.run_shared_proxy", proxy)
+    monkeypatch.setattr("aseprite_mcp.__main__.create_server", lambda **kwargs: pytest.fail("No direct live startup"))
+    main(arguments)
+    assert called == ["core"]
 
 
 def test_concurrent_cold_start_shares_one_process_and_sessions():
@@ -82,7 +97,7 @@ def test_concurrent_cold_start_shares_one_process_and_sessions():
         async def use():
             nonlocal arrived
             async with client(port) as session:
-                owners.append(_listener_pids("127.0.0.1", port))
+                owners.append(listener_pids("127.0.0.1", port))
                 assert len((await session.list_tools()).tools) == 9
                 arrived += 1
                 if arrived == 4:
@@ -95,7 +110,7 @@ def test_concurrent_cold_start_shares_one_process_and_sessions():
             await asyncio.gather(*(use() for _ in range(4)))
             assert len(owners[0]) == 1 and all(owner == owners[0] for owner in owners)
             async with client(port) as returning:
-                assert _listener_pids("127.0.0.1", port) == owners[0]
+                assert listener_pids("127.0.0.1", port) == owners[0]
                 assert not (await status(returning))["connected"]
         finally:
             stop_test_background(port)
@@ -107,9 +122,9 @@ def test_killing_one_proxy_preserves_other_client_and_background():
         port = unused_port()
         try:
             async with client(port) as survivor:
-                owner = _listener_pids("127.0.0.1", port)
-                process = subprocess.Popen([sys.executable, "-m", "aseprite_mcp", "--shared", "--port", str(port), "--no-takeover"],
-                    env=dict(os.environ, ASEPRITE_MCP_TOOL_PROFILE="core", ASEPRITE_MCP_TAKEOVER="0"),
+                owner = listener_pids("127.0.0.1", port)
+                process = subprocess.Popen([sys.executable, "-m", "aseprite_mcp", "--shared", "--port", str(port)],
+                    env=dict(os.environ, ASEPRITE_MCP_TOOL_PROFILE="core"),
                     stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
                 try:
                     # Initialize the second raw client before forcing its death.
@@ -126,10 +141,7 @@ def test_killing_one_proxy_preserves_other_client_and_background():
                     process.stdin.close()
                     process.stdout.close()
                 assert not (await status(survivor))["connected"]
-                assert _listener_pids("127.0.0.1", port) == owner
-                with pytest.raises(OSError, match="shared background"):
-                    await asyncio.to_thread(terminate_previous_listener, "127.0.0.1", port)
-                assert not (await status(survivor))["connected"]
+                assert listener_pids("127.0.0.1", port) == owner
         finally:
             stop_test_background(port)
     run(scenario())
@@ -140,11 +152,11 @@ def test_configuration_mismatch_does_not_replace_background():
         port = unused_port()
         try:
             async with client(port) as first:
-                owner = _listener_pids("127.0.0.1", port)
+                owner = listener_pids("127.0.0.1", port)
                 with pytest.raises(OSError, match="configuration mismatch"):
                     async with shared_connection(RuntimeConfig(port=port), "all"):
                         pytest.fail("Must reject another tool catalog")
-                assert _listener_pids("127.0.0.1", port) == owner
+                assert listener_pids("127.0.0.1", port) == owner
                 assert not (await status(first))["connected"]
         finally:
             stop_test_background(port)
@@ -169,7 +181,7 @@ def test_background_exits_after_idle_timeout():
     async def scenario():
         port = unused_port()
         await asyncio.wait_for(run_shared_server(RuntimeConfig(port=port), "core", idle_timeout=.1), 3)
-        assert _listener_pids("127.0.0.1", port) == set()
+        assert listener_pids("127.0.0.1", port) == set()
     run(scenario())
 
 
@@ -191,11 +203,11 @@ def test_shared_client_refuses_direct_service_without_replacing_it(monkeypatch):
 def test_backend_failure_closes_proxy_without_replay():
     async def scenario():
         port = unused_port()
-        params = [sys.executable, "-m", "aseprite_mcp", "--shared", "--port", str(port), "--no-takeover"]
+        params = [sys.executable, "-m", "aseprite_mcp", "--shared", "--port", str(port)]
         process = subprocess.Popen(params, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
-            env=dict(os.environ, ASEPRITE_MCP_TOOL_PROFILE="core", ASEPRITE_MCP_TAKEOVER="0"))
+            env=dict(os.environ, ASEPRITE_MCP_TOOL_PROFILE="core"))
         try:
-            await until(lambda: bool(_listener_pids("127.0.0.1", port)))
+            await until(lambda: bool(listener_pids("127.0.0.1", port)))
             request = {"jsonrpc": "2.0", "id": 1, "method": "initialize",
                 "params": {"protocolVersion": "2024-11-05", "capabilities": {}, "clientInfo": {"name": "failure", "version": "1"}}}
             process.stdin.write((json.dumps(request) + "\n").encode())
@@ -205,14 +217,14 @@ def test_backend_failure_closes_proxy_without_replay():
             assert json.loads(response)["id"] == 1
             stop_test_background(port)
             await until(lambda: process.poll() is not None, timeout=5)
-            assert _listener_pids("127.0.0.1", port) == set()
+            assert listener_pids("127.0.0.1", port) == set()
         finally:
             if process.poll() is None:
                 process.terminate()
             process.wait(timeout=5)
             process.stdin.close()
             process.stdout.close()
-            if _listener_pids("127.0.0.1", port):
+            if listener_pids("127.0.0.1", port):
                 stop_test_background(port)
     run(scenario())
 

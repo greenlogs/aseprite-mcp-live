@@ -8,7 +8,16 @@ from pathlib import Path
 import shutil
 import subprocess
 
+import psutil
+
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def listener_pids(host, port):
+    """Test-only inspection; production never inspects or terminates owners."""
+    return {entry.pid for entry in psutil.net_connections(kind="tcp")
+            if entry.status == psutil.CONN_LISTEN and entry.laddr
+            and entry.laddr.ip == host and entry.laddr.port == port}
 
 
 def live_port():

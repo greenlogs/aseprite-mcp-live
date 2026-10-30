@@ -32,7 +32,6 @@ dependencies = [
     { name = "httpx" },
     { name = "mcp", extra = ["cli"] },
     { name = "pillow" },
-    { name = "psutil" },
     { name = "pydantic" },
     { name = "python-dotenv" },
     { name = "twine" },
@@ -41,6 +40,7 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "psutil" },
     { name = "pytest" },
 ]
 
@@ -49,7 +49,6 @@ requires-dist = [
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "mcp", extras = ["cli"], specifier = ">=1.6.0,<2" },
     { name = "pillow", specifier = ">=10.0.0" },
-    { name = "psutil", specifier = ">=7.0.0" },
     { name = "pydantic", specifier = ">=2.11,<3" },
     { name = "python-dotenv", specifier = ">=1.0.1" },
     { name = "twine", specifier = ">=7.0.0" },
@@ -57,7 +56,10 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
-dev = [{ name = "pytest", specifier = ">=9.0.3" }]
+dev = [
+    { name = "psutil", specifier = ">=7.0.0" },
+    { name = "pytest", specifier = ">=9.0.3" },
+]
 
 [[package]]
 name = "certifi"

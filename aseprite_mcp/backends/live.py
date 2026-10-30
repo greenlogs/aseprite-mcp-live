@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import asyncio
-import errno
 import json
 from contextlib import asynccontextmanager
 import logging
@@ -11,8 +10,6 @@ import os
 from pydantic import ValidationError
 from websockets.asyncio.server import serve
 from websockets.exceptions import ConnectionClosed
-
-from .takeover import terminate_previous_listener
 
 from ..core.protocol import (
     BackendError, LIVE_CAPABILITIES, ErrorCode, Handshake, Request, Result, SERVICE_VERSION, Welcome, failure,
@@ -71,32 +68,13 @@ class LiveBridge:
         # send http(s):// (or null); accept only this native form or no Origin.
         host = f"[{self.config.host}]" if ":" in self.config.host else self.config.host
         native_origin = f"ws://{host}:{self.config.port}"
-        async def listen():
-            return await serve(self._handle, self.config.host, self.config.port,
-                               max_size=self.config.limits.max_message_bytes, compression=None,
-                               logger=log, origins=[None, native_origin])
-
         try:
-            try:
-                listener = await listen()
-            except OSError as exc:
-                if not self.config.takeover or not self._port_in_use(exc):
-                    raise
-                # At most one takeover per startup. A competing new listener is
-                # never killed again by this process during a bind retry.
-                await asyncio.to_thread(terminate_previous_listener, self.config.host, self.config.port)
-                deadline = asyncio.get_running_loop().time() + 2
-                while True:
-                    try:
-                        listener = await listen()
-                        break
-                    except OSError as retry:
-                        if not self._port_in_use(retry) or asyncio.get_running_loop().time() >= deadline:
-                            raise
-                        await asyncio.sleep(.05)
+            listener = await serve(self._handle, self.config.host, self.config.port,
+                                   max_size=self.config.limits.max_message_bytes, compression=None,
+                                   logger=log, origins=[None, native_origin])
         except OSError as exc:
             raise OSError(f"Cannot listen on {self.config.host}:{self.config.port}; release the port, "
-                          f"use --takeover for a previous aseprite-mcp, or choose another --port "
+                          f"or choose another --port "
                           f"and match it in the extension. {exc}") from exc
         async with listener as server:
             self.server = server
@@ -106,10 +84,6 @@ class LiveBridge:
                 yield self
             finally:
                 self.url, self.server = None, None
-
-    @staticmethod
-    def _port_in_use(error):
-        return error.errno in {errno.EADDRINUSE, 10048} or getattr(error, "winerror", None) == 10048
 
     async def _handle(self, socket):
         if socket.request.path == "/mcp":

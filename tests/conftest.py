@@ -10,8 +10,10 @@ No fixed /tmp path or destructive shared-directory cleanup is needed.
 import asyncio
 import os
 import sys
+from uuid import uuid4
 
 import pytest
+import psutil
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
@@ -36,6 +38,27 @@ def ok(result):
 @pytest.fixture(scope="session", autouse=True)
 def base_dir(tmp_path_factory):
     return tmp_path_factory.mktemp("aseprite").as_posix()
+
+
+@pytest.fixture(autouse=True)
+def shared_background_cleanup(monkeypatch):
+    """Only reap backgrounds marked as spawned by this individual test.
+
+    Default shared startup survives its stdio client. Tests with different
+    profiles/limits must not accidentally reuse a previous test's background.
+    """
+    owner = str(uuid4())
+    monkeypatch.setenv("ASEPRITE_MCP_TEST_OWNER", owner)
+    yield
+    for process in psutil.process_iter(["name"]):
+        if not process.info["name"].lower().startswith("python"):
+            continue
+        try:
+            if "--serve-shared" in process.cmdline() and process.environ().get("ASEPRITE_MCP_TEST_OWNER") == owner:
+                process.terminate()
+                process.wait(timeout=5)
+        except psutil.NoSuchProcess:
+            pass
 
 
 @pytest.fixture(scope="module")
