@@ -2,7 +2,7 @@
 
 # Aseprite MCP
 
-**Make AI your pixel art collaborator**
+**Make AI your pixel art creative partner**
 
 Draw, edit, and preview pixel art in Aseprite through the Model Context Protocol.
 
@@ -16,7 +16,7 @@ Draw, edit, and preview pixel art in Aseprite through the Model Context Protocol
 
 ---
 
-Aseprite MCP connects MCP-compatible clients and agents such as `Codex`, `Claude Code`, and `DeepseekHarness` to Aseprite. Read and edit unsaved canvases, view image previews, use undo/redo, and enable basic animation to continue creating in the same document. CLI tools remain available for disk-based processing.
+Aseprite MCP connects MCP-compatible clients and agents such as `Codex`, `Claude Code`, and `DeepseekHarness` to Aseprite. It supports reading and editing unsaved canvases, image previews, undo and redo, and optional basic animation, so you can continue creating in the same document. It also retains CLI support for processing files on disk.
 
 <div align="center">
   <img src="./assets/preview1.gif" style="width: 50%; max-width: 100%; border-radius: 4px;" />
@@ -25,24 +25,24 @@ Aseprite MCP connects MCP-compatible clients and agents such as `Codex`, `Claude
   <img src="./assets/preview2.png" style="width: 50%; max-width: 100%; border-radius: 4px;" />
 </div>
 
-[PyPI package](https://pypi.org/project/aseprite-mcp/) · [Release extension downloads](https://github.com/greenlogs/aseprite-mcp-live/releases) · [Report an issue](https://github.com/greenlogs/aseprite-mcp-live/issues)
+[PyPI Package](https://pypi.org/project/aseprite-mcp/) · [Extension Downloads](https://github.com/greenlogs/aseprite-mcp-live/releases) · [Report an Issue](https://github.com/greenlogs/aseprite-mcp-live/issues)
 
-For **Windows + Aseprite 1.3+**. Install Aseprite separately; it is not distributed with this project.
+Tested with **Aseprite 1.3+ on Windows**. Aseprite must be installed separately and is not included with this project.
 
-## Quickstart
+## Quick Start
 
 Make sure you have [installed the Aseprite extension](#install-the-aseprite-extension).
-Then enter the following in your preferred AI agent:
+Then enter the following prompt in your preferred AI agent tool:
 
 ```text
-Please help me set up Aseprite MCP from https://github.com/greenlogs/aseprite-mcp-live. Aseprite is already installed at [enter the path to your aseprite.exe], and I have installed and enabled the Aseprite extension.
+Please help me install Aseprite MCP from https://github.com/greenlogs/aseprite-mcp-live. Aseprite is already installed at [enter the installation path to your aseprite.exe], and I have already installed and enabled the extension.
 ```
 
-## Install uv on Windows
+## Install uv (Windows)
 
-Run either of these options in PowerShell.
+Run either of the following in PowerShell.
 
-**Option 1: Official installer**
+**Option 1: Official installation script**
 
 ```powershell
 powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
@@ -54,72 +54,74 @@ powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | ie
 winget install --id=astral-sh.uv -e
 ```
 
-Open a new terminal after installation and check that `uv` and its included `uvx` command are available:
+After installation, reopen your terminal and check that `uv` and the included `uvx` are available:
 
 ```powershell
 uv --version
 uvx --version
 ```
 
-Alternatively, download the archive for your Windows architecture from the [official uv releases](https://github.com/astral-sh/uv/releases), extract it, and add the executable directory to `PATH`. See the [official installation instructions](https://docs.astral.sh/uv/getting-started/installation/) for more options.
+You can also download the archive for your Windows architecture from the [official uv releases](https://github.com/astral-sh/uv/releases), extract it, and add the directory containing the executables to `PATH`. For more options, see the [official uv installation guide](https://docs.astral.sh/uv/getting-started/installation/).
 
-This project requires **Python 3.13+**. You can let uv manage the interpreter:
+This project requires **Python 3.13+**. You can use uv to manage the required interpreter:
 
 ```powershell
 uv python install 3.13
 ```
 
-## Install the Aseprite extension
+## Install the Aseprite Extension
 
-Both server options require the matching extension:
+Both server startup methods require the companion extension:
 
-1. Visit [GitHub Releases](https://github.com/greenlogs/aseprite-mcp-live/releases) and download the `.aseprite-extension` file matching your server version. The current server version is **0.5.0**.
-2. In Aseprite, open **Edit → Preferences → Extensions → Add Extension**, select the downloaded package, then install and enable it.
+1. Go to [GitHub Releases](https://github.com/greenlogs/aseprite-mcp-live/releases) and download the `.aseprite-extension` file that matches your server version. The current server version is **0.5.0**.
+2. In Aseprite, open **Edit → Preferences → Extensions → Add Extension**, select the downloaded extension package, then install and enable it.
 
-   <img src="./assets/step1.png" style="width: 50%; max-width: 100%; border-radius: 4px;" />
-   <img src="./assets/step2.png" style="width: 50%; max-width: 100%; border-radius: 4px;" />
+    <img src="./assets/step1.png" style="width: 50%; max-width: 100%; border-radius: 4px;" />
+    <img src="./assets/step2.png" style="width: 50%; max-width: 100%; border-radius: 4px;" />
 
    Check the script status:
 
-   <img src="./assets/step3.png" style="width: 50%; max-width: 100%; border-radius: 4px;" />
-   <img src="./assets/step4.png" style="width: 50%; max-width: 100%; border-radius: 4px;" />
-   <img src="./assets/step6.png" style="width: 50%; max-width: 100%; border-radius: 4px;" />
+    <img src="./assets/step3.png" style="width: 50%; max-width: 100%; border-radius: 4px;" />
+    <img src="./assets/step4.png" style="width: 50%; max-width: 100%; border-radius: 4px;" />
+    <img src="./assets/step6.png" style="width: 50%; max-width: 100%; border-radius: 4px;" />
 
-   When `status` shows Connected, the extension has successfully connected to the server.
+   A `status` of Connected means the extension has successfully connected to the server.
 
-   <img src="./assets/step5.png" style="width: 50%; max-width: 100%; border-radius: 4px;" />
+    <img src="./assets/step5.png" style="width: 50%; max-width: 100%; border-radius: 4px;" />
 
-3. Restart Aseprite and allow the extension's local WebSocket access when prompted.
+3. Restart Aseprite. On the first connection, grant the extension permission to use the local WebSocket when prompted.
 
-Notes:
+**Note:**
 
-- 1.If the MCP connection is active but tool status fails to load, please restart the Agent client. Ensure Aseprite is launched before starting the Agent.
-- 2.Please refrain from drawing on the canvas while the Agent is working to avoid conflicts during real-time collaboration.
+- Avoid drawing on the canvas while the agent is working, as this may interfere with live collaboration.
 
-The extension connects automatically to `127.0.0.1:8765`. Open **File → Scripts → MCP: Connect / Settings** to check its status, change the port, or disconnect. No connection file is needed.
+The extension automatically connects to `127.0.0.1:8765` by default. Open **File → Scripts → MCP: Connect / Settings** to check the status, change the port, or disconnect. No connection file needs to be selected.
 
-## Option 1: Run with uvx (recommended)
+## Option 1: Run with uvx (Recommended)
 
-Fetch and run the server from PyPI without cloning the repository:
+Download and run directly from PyPI without cloning the repository:
 
 ```powershell
 uvx --python 3.13 aseprite-mcp
 ```
 
-This command starts a **stdio MCP server** that waits for MCP client input; a waiting terminal is normal. For regular use, let your MCP client launch the server with the configuration below. You do not need to start a second instance in a terminal.
+This command starts a **stdio MCP server** that waits for input from an MCP client. It is normal for the terminal to remain waiting. In typical use, the MCP client starts the server automatically using the configuration below, so you do not need to open another terminal to start a second instance.
 
-### MCP client configuration
+### MCP Client Configuration
 
-This example is for clients using the `mcpServers` JSON format. Other clients should use their equivalent stdio configuration.
+The following configuration applies to clients that use the `mcpServers` JSON format. For other clients, use their corresponding stdio configuration format.
 
 ```json
 {
   "mcpServers": {
     "aseprite": {
       "command": "uvx",
-      "args": ["--python", "3.13", "aseprite-mcp"],
+      // Add --shared for clients that need shared mode, such as Codex with its multiple session processes.
+      "args": ["--python", "3.13", "aseprite-mcp", "--shared"],
       "env": {
-        "ASEPRITE_MCP_TOOL_PROFILE": "all",
+        // The default tool profile is core. Other available profiles are all and cli.
+        "ASEPRITE_MCP_TOOL_PROFILE": "core",
+        // Enable animation capabilities for the core profile.
         "ASEPRITE_MCP_CAPABILITY_SETS": "animation"
       }
     }
@@ -127,11 +129,11 @@ This example is for clients using the `mcpServers` JSON format. Other clients sh
 }
 ```
 
-Save the configuration, restart the client, and open Aseprite. Either application can start first; the extension connects when the server is ready.
+Save the configuration and restart your client, then open Aseprite. The extension and server can be started in either order; the extension connects automatically once the server is ready.
 
-## Option 2: Build and run locally
+## Option 2: Build and Run Locally
 
-Git is required for cloning. Alternatively, download the repository's source archive, extract it, and open its root directory.
+Git is required. Alternatively, download the source archive from the repository page, extract it, and open the project root directory.
 
 ```powershell
 git clone https://github.com/greenlogs/aseprite-mcp-live.git
@@ -140,15 +142,15 @@ uv sync --locked --python 3.13
 uv run --locked python scripts/build_release.py --out-dir dist
 ```
 
-The `dist/` directory contains the Python wheel, source package, `.aseprite-extension`, locked production requirements, and checksums. Install the matching extension from Releases or use the locally generated extension package.
+This generates a Python wheel, a source distribution, and an `.aseprite-extension` package in `dist/`.
 
-Start the server from the repository root:
+Start the server from the project root directory:
 
 ```powershell
 uv run --locked aseprite-mcp
 ```
 
-To let your MCP client launch the local source version, use this configuration instead:
+To have your MCP client start the local source version, replace the configuration with:
 
 ```json
 {
@@ -157,7 +159,7 @@ To let your MCP client launch the local source version, use this configuration i
       "command": "uv",
       "args": ["--directory", "{source-path}", "run", "--locked", "aseprite-mcp"],
       "env": {
-        "ASEPRITE_MCP_TOOL_PROFILE": "all",
+        "ASEPRITE_MCP_TOOL_PROFILE": "core",
         "ASEPRITE_MCP_CAPABILITY_SETS": "animation"
       }
     }
@@ -165,7 +167,7 @@ To let your MCP client launch the local source version, use this configuration i
 }
 ```
 
-Replace `{source-path}` with the absolute path to your source directory, such as `C:/path/to/aseprite-mcp-live`. Choose one server configuration and run only one server per port.
+Replace `source-path` with the absolute path to the source directory, such as `C:/path/to/aseprite-mcp-live`. Choose one server configuration; run only one server per port.
 
 ## Features
 
@@ -173,37 +175,40 @@ Replace `{source-path}` with the absolute path to your source directory, such as
 | ------------------------------ | -------------------------------------------------------------------------------------------------- |
 | **Live collaboration**         | Read and edit open documents, including unsaved canvases                                           |
 | **Pixels and layers**          | Create RGB canvases, add regular layers, adjust opacity, and draw pixels and rectangles in batches |
-| **Visual feedback**            | Return PNG previews directly to MCP clients that support image content                             |
-| **Undo and redo**              | Undo a successful editing batch in one step using Aseprite's native history                        |
-| **Basic animation (optional)** | Append or delete frames, set durations, and create or manage animation tags                        |
-| **CLI file tools**             | Enable disk-based processing separately using retained upstream tools                              |
-| **Automatic connection**       | Wait for the server and reconnect after it restarts                                                |
+| **Image feedback**             | Return previews directly as PNG images to MCP clients that support image content                   |
+| **Undo and redo**              | Each successful edit batch corresponds to one undo step in Aseprite's native history               |
+| **Basic animation (optional)** | Append or delete frames, set frame durations, and create and manage animation tags                 |
+| **CLI file tools**             | Enable disk file processing separately and use the retained upstream tools for batch processing    |
+| **Automatic connection**       | Wait for the server to become ready and reconnect automatically after it restarts                  |
 
-The Python MCP server communicates with your client over stdio. The Lua extension connects over a local WebSocket to edit documents in Aseprite's memory. Live edits target an explicit document and revision; switching the active window does not redirect them.
+The Python MCP server communicates with the client over stdio. The Lua extension connects to the server over a local WebSocket and edits documents in Aseprite's memory. Live edits are bound to a specific document and revision; switching the active window does not change the operation's target.
 
-## Optional configuration
+## Optional Configuration
 
-### Basic animation
+### Additional Tools
 
-Add this setting to your client's `env` configuration and restart the server:
+For the full tool list, see the [tool reference](assets/tools.en.md).
+
+Enable the capabilities your project needs to avoid cluttering the context. Add the following to `env` in your client configuration, then restart the server:
 
 ```json
 {
+  // Enable animation editing.
   "ASEPRITE_MCP_CAPABILITY_SETS": "animation"
 }
 ```
 
-This exposes the additional `apply_animation` tool. It supports appending copies of the last frame, deleting frames, setting frame durations, and creating, updating, or deleting tags. Frames start at 1 and durations use integer milliseconds. Each animation batch supports one-step undo/redo and does not save automatically.
+This adds the `apply_animation` tool. It supports appending copies of the last frame, deleting frames, setting frame durations, and creating, updating, and deleting tags. Frame numbers start at 1, and durations are specified in integer milliseconds. Each batch of animation operations supports a single undo and redo step and does not save automatically.
 
-### Tool profiles and Aseprite path
+### Tool Profiles and Aseprite Path
 
-Set `ASEPRITE_MCP_TOOL_PROFILE` to choose the available tools:
+Use `ASEPRITE_MCP_TOOL_PROFILE` to select the tool profile:
 
-| Value                                 | Available tools                                                |
-| ------------------------------------- | -------------------------------------------------------------- |
-| `all` (default in the examples above) | 125 live and CLI tools combined, or 126 with animation enabled |
-| `core`                                | 9 live core tools, or 10 with animation enabled                |
-| `cli`                                 | 116 disk-based tools; no live connection                       |
+| Value            | Available Tools                                             |
+| ---------------- | ----------------------------------------------------------- |
+| `all`            | 125 live and CLI tools in total; 126 with animation enabled |
+| `core` (default) | 9 core live tools; 10 with animation enabled                |
+| `cli`            | 116 disk file tools; does not establish a live connection   |
 
 ```json
 {
@@ -212,54 +217,46 @@ Set `ASEPRITE_MCP_TOOL_PROFILE` to choose the available tools:
 }
 ```
 
-### Custom port
+### Custom Port
 
-Change the server port with a startup argument:
+Change the server port using a startup argument, for example:
 
 ```powershell
 uvx --python 3.13 aseprite-mcp==0.5.0 --port 8766
 ```
 
-In your client configuration, append `--port` and `8766` to `args`, then set the extension's Port to `8766`. Local source execution also supports `uv run --locked aseprite-mcp --port 8766`.
+Append `--port` and `8766` to `args` in your client configuration, and set Port to `8766` in the extension settings. When running from local source, you can also use `uv run --locked aseprite-mcp --port 8766`.
 
-### Share the connection across chats (new in local source)
+### Arguments
 
-The current local source uses shared mode by default for `core` and `all`. No mode argument is needed:
+| Argument   | Purpose                                                                                             |
+| ---------- | --------------------------------------------------------------------------------------------------- |
+| `--shared` | Enable shared mode, allowing multiple clients to share the same connection to the background server |
 
-```json
-"args": ["--directory", "{source-path}", "run", "--locked", "aseprite-mcp"]
-```
+## Scope and Limitations
 
-Each chat has its own stdio proxy and starts or reuses one background service. The service still connects to Aseprite on local port `8765`; no extension change is needed. Starting another chat or closing one proxy preserves the other connections. Clients share documents, the editing queue and revision checks. Refresh document state after a conflict. Tool profiles, animation capabilities, limits and Aseprite paths must match; incompatible configurations are rejected.
-
-The background exits after all clients disconnect and it remains idle for five minutes, then starts again when needed. Unrelated programs and ordinary single-client MCP listeners are preserved; stop the previous service before enabling shared mode. Background failure closes the proxies. Reconnect the MCP client and inspect the canvas before retrying edits; writes are never replayed automatically. A chat whose transport is already closed must establish a new MCP connection, which may require restarting the client.
-
-The current local source supports shared live connections only. `--shared` remains a compatibility alias. The old `--takeover` and `--no-takeover` arguments have been removed; delete them from existing client configurations. The former takeover environment setting is no longer read. The `cli` tool profile still provides disk tools over stdio without an editor listener. These source changes are not included in the published `0.5.0` package and have been verified only on Windows.
-
-## Scope and behavior
-
-- Live drawing targets regular editable RGB layers. Unsupported edits involving non-RGB documents, locked layers, background layers, reference layers, or Tilemaps are rejected. Palettes, effects, tweening, and Tilemaps have not been migrated to live tools.
-- Edits do not save automatically. Saving to `.aseprite` or `.ase` requires an explicit path; replacing an existing file requires an explicit overwrite parameter.
-- Undo and redo affect the document's latest history, which may include manual edits. Large operations may exceed pixel, image-copy, or execution-time budgets; use smaller batches.
-- Live tools operate on in-memory documents; CLI tools operate on disk files. A disconnected live session does not fall back to CLI. Avoid concurrent writes to the same disk file through both paths.
-- The server listens only on local loopback addresses. Read the document list again after reconnecting; old session and document IDs cannot be reused.
+- Live drawing supports regular, editable RGB layers. Unsupported edits involving non-RGB documents, locked layers, background layers, reference layers, or tilemaps are explicitly rejected. Palettes, effects, tweening, and tilemaps have not yet been migrated to live capabilities.
+- Edits are not saved automatically. Saving as `.aseprite` or `.ase` requires an explicit path, and overwriting an existing file requires an explicit overwrite parameter.
+- Undo and redo apply to the document's latest history and may also affect manual edits. Larger operations may hit pixel, copy, or execution time limits; reduce the batch size if this happens.
+- The live backend operates on documents in memory, while the CLI backend operates on files on disk. A disconnection does not trigger an automatic switch to CLI. Avoid writing to the same disk file through both backends at the same time.
+- The server listens only on the local loopback address. After reconnecting, read the document list again; old session and document IDs cannot be reused.
 
 ## Troubleshooting
 
-| Problem                               | Suggested fix                                                                                                              |
-| ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `uv` or `uvx` is not found            | Reopen your terminal and client after installation, or use the executable's absolute path in the client configuration      |
-| Extension is disconnected             | Check that your MCP client started the server, the extension is enabled, WebSocket access is allowed, and both ports match |
-| Port is already in use                | Current source shares live connections by default; stop an older direct service or use another port for unrelated programs |
-| `Transport closed`                   | The old MCP channel ended; enable shared mode and establish a new client connection, restarting the client if needed |
-| Version mismatch                      | Install matching server and extension versions; use `aseprite-mcp==0.5.0` to pin the server                                |
-| Missing document or revision conflict | Read the document list and information again using the current session and revision                                        |
-| Preview image is not displayed        | Check MCP image support in your client and reduce the preview region or scale                                              |
+| Issue                                   | Resolution                                                                                                                                                       |
+| --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `uv` or `uvx` not found                 | Reopen your terminal and client after installation, or use the executable's absolute path in the client configuration                                            |
+| Extension not connected                 | Confirm that the MCP client has started the server, the extension is enabled, WebSocket permission has been granted, and both sides use the same port            |
+| Port already in use                     | The current source version shares connections by default. If an older standalone server or another program is using the port, stop it or choose a different port |
+| `Transport closed`                      | The previous MCP channel has ended. Enable shared mode and reestablish the client connection; restart the client if necessary                                    |
+| Version mismatch                        | Install matching versions of the server and extension. Use `aseprite-mcp==0.5.0` to pin the version                                                              |
+| Document not found or revision conflict | Read the document list and information again, then use the current session and revision                                                                          |
+| Preview image not displayed             | Confirm that the client supports MCP image content, and reduce the preview area or scale factor                                                                  |
 
-For further help, open a [GitHub issue](https://github.com/greenlogs/aseprite-mcp-live/issues) with your software versions, startup method, and error message.
+If the problem persists, submit your software versions, startup method, and error message through [GitHub Issues](https://github.com/greenlogs/aseprite-mcp-live/issues).
 
-## Acknowledgments and license
+## Acknowledgments and License
 
-Built on the tools and tests from [diivi/aseprite-mcp](https://github.com/diivi/aseprite-mcp), preserving its MIT license and copyright. New code is also licensed under [MIT](LICENSE).
+Adapted from the tools and test foundation of [diivi/aseprite-mcp](https://github.com/diivi/aseprite-mcp). The upstream MIT license and copyright notices are retained, and new code is also released under the [MIT License](LICENSE).
 
-This is a third-party integration and is not affiliated with the Aseprite team. Install Aseprite separately; it is not distributed with this project.
+This project is a third-party integration and is not affiliated with the official Aseprite project. Aseprite must be obtained separately and is not distributed with this project.
