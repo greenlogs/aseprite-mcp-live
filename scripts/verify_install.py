@@ -32,7 +32,7 @@ async def installed_editor(directory, extension_archive, aseprite, port=8765):
     extension = user / "extensions/aseprite-mcp-live"
     extension.mkdir(parents=True)
     with zipfile.ZipFile(extension_archive) as archive:
-        assert set(archive.namelist()) == {"package.json", "main.lua", "bridge.lua", "editor.lua", "preview.lua", "animation.lua", "LICENSE", "NOTICE.md"}
+        assert set(archive.namelist()) == {"package.json", "main.lua", "bridge.lua", "editor.lua", "preview.lua", "animation.lua", "drawing.lua", "LICENSE", "NOTICE.md"}
         archive.extractall(extension)
     boot, command_file = directory / "boot.lua", directory / "manual.lua"
     control, response = directory / "control.json", directory / "response.json"
@@ -138,7 +138,7 @@ async def verify(python, extension, aseprite, directory, port=8765, animation=Fa
             await client.initialize()
             evidence["timings_ms"]["startup"] = (time.perf_counter() - started) * 1000
             tools = await client.list_tools()
-            assert len(tools.tools) == (126 if animation else 125) and "run_lua_script" not in {tool.name for tool in tools.tools}
+            assert len(tools.tools) == (127 if animation else 126) and "run_lua_script" not in {tool.name for tool in tools.tools}
             async with installed_editor(directory, extension, aseprite, port) as manual:
                 async def connected(exclude=None):
                     async with asyncio.timeout(20):
@@ -192,6 +192,22 @@ async def verify(python, extension, aseprite, directory, port=8765, animation=Fa
                 assert (await preview(document, undone["revision"], "undo")).tobytes() == before.tobytes()
                 redone = await call("redo", document_id=document, expected_revision=undone["revision"])
                 assert (await preview(document, redone["revision"], "redo")).tobytes() == after.tobytes()
+                refreshed=await call("get_document_info", document_id=document)
+                painted_layer=next(layer["id"] for layer in refreshed["data"]["layers"] if layer["name"]=="Installed paint")
+                layer_ref={"kind":"id","value":painted_layer}
+                drawing = await call("apply_operations", document_id=document, expected_revision=redone["revision"],
+                    operations=[
+                        {"op":"pixels","layer":layer_ref,"points":[{"x":7,"y":7,"rgba":[1,2,3,255]}]},
+                        {"op":"line","layer":layer_ref,"x1":0,"y1":6,"x2":7,"y2":6,"rgba":[20,30,40,255]},
+                        {"op":"ellipse","layer":layer_ref,"x":0,"y":0,"width":3,"height":3,"rgba":[80,90,100,255],"filled":False},
+                        {"op":"write_region","layer":layer_ref,"x":0,"y":7,"width":2,"height":1,"encoding":"rle",
+                         "runs":[{"count":2,"rgba":[7,8,9,0]}]},
+                        {"op":"clear_region","layer":layer_ref,"x":4,"y":4,"width":1,"height":1}])
+                raw = await call("read_pixels", document_id=document, expected_revision=drawing["revision"],
+                    layer=painted_layer, region={"x":0,"y":7,"width":2,"height":1}, encoding="rle")
+                assert raw["data"]["runs"] == [{"count":2,"rgba":[7,8,9,0]}]
+                redone = await call("undo", document_id=document, expected_revision=drawing["revision"])
+                assert (await preview(document, redone["revision"], "drawing-undone")).tobytes() == after.tobytes()
                 if animation:
                     timeline = await call("apply_animation", document_id=document, expected_revision=redone["revision"],
                         operations=[{"op": "add_frames", "count": 2, "duration_ms": 120},
@@ -239,6 +255,7 @@ async def verify(python, extension, aseprite, directory, port=8765, animation=Fa
                     "atomic-batch-and-dedup", "MCP-image-content", "undo-redo-pixel-equality", "explicit-Chinese-save",
                     "overwrite-refusal", "installed-CLI-read-edit", "legacy-CLI-read", "reconnect-stale-session",
                     "CLI-receipt-survives-editor-reconnect"]
+                evidence["checks"].append("packaged-drawing-and-raw-pixel-RLE-history")
                 if animation:
                     evidence["checks"].append("optional-animation-transaction-history-preview")
         # Verify the exact console entry shown in the public client config.

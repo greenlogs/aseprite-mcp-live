@@ -8,9 +8,10 @@
     "capabilities": [
       "get_document_info",
       "apply_operations",
-      "get_preview"
+      "get_preview",
+      "read_pixels"
     ],
-    "extension_version": "0.5.1"
+    "extension_version": "0.6.0"
   },
   "welcome": {
     "type": "welcome",
@@ -19,7 +20,8 @@
     "capabilities": [
       "get_document_info",
       "apply_operations",
-      "get_preview"
+      "get_preview",
+      "read_pixels"
     ],
     "limits": {
       "max_message_bytes": 8388608,
@@ -174,6 +176,128 @@
             "direction": "pingpong"
           }
         ]
+      }
+    },
+    {
+      "request_id": "drawing-new",
+      "target": {
+        "backend": "live",
+        "session_id": "session-1",
+        "document_id": "doc-1"
+      },
+      "expected_revision": 3,
+      "action": {
+        "name": "apply_operations",
+        "operations": [
+          {
+            "op": "write_region",
+            "layer": {
+              "kind": "id",
+              "value": "l1"
+            },
+            "x": 0,
+            "y": 0,
+            "width": 2,
+            "height": 1,
+            "encoding": "rle",
+            "runs": [
+              {
+                "count": 2,
+                "rgba": [
+                  10,
+                  20,
+                  30,
+                  128
+                ]
+              }
+            ]
+          },
+          {
+            "op": "line",
+            "layer": {
+              "kind": "id",
+              "value": "l1"
+            },
+            "x1": 0,
+            "y1": 1,
+            "x2": 2,
+            "y2": 3,
+            "rgba": [
+              10,
+              20,
+              30,
+              255
+            ]
+          },
+          {
+            "op": "ellipse",
+            "layer": {
+              "kind": "id",
+              "value": "l1"
+            },
+            "x": 0,
+            "y": 0,
+            "width": 2,
+            "height": 2,
+            "filled": false,
+            "rgba": [
+              10,
+              20,
+              30,
+              255
+            ]
+          },
+          {
+            "op": "pixels",
+            "layer": {
+              "kind": "id",
+              "value": "l1"
+            },
+            "points": [
+              {
+                "x": 1,
+                "y": 1,
+                "rgba": [
+                  10,
+                  20,
+                  30,
+                  255
+                ]
+              }
+            ]
+          },
+          {
+            "op": "clear_region",
+            "layer": {
+              "kind": "id",
+              "value": "l1"
+            },
+            "x": 0,
+            "y": 0,
+            "width": 1,
+            "height": 1
+          }
+        ]
+      }
+    },
+    {
+      "request_id": "read-new",
+      "target": {
+        "backend": "live",
+        "session_id": "session-1",
+        "document_id": "doc-1"
+      },
+      "expected_revision": 4,
+      "action": {
+        "name": "read_pixels",
+        "layer": "l1",
+        "region": {
+          "x": 0,
+          "y": 0,
+          "width": 2,
+          "height": 1
+        },
+        "encoding": "rle"
       }
     }
   ],

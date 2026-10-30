@@ -264,3 +264,7 @@ uvx --python 3.13 aseprite-mcp==0.5.1 --port 8766
 基于 [diivi/aseprite-mcp](https://github.com/diivi/aseprite-mcp) 的工具与测试基础改造，保留上游 MIT 许可和版权，新增代码同样采用 [MIT 许可](LICENSE)。
 
 本项目为第三方集成，与 Aseprite 官方无隶属关系。Aseprite 需自行准备，不随项目分发。
+
+## 源码实时绘图增量（0.6.0，尚未发布）
+
+同一批次复用 Cel 图像，新增批量像素、区域写入、直线、椭圆、区域擦除和 `read_pixels`。区域写入/读取支持 RGBA 与 RLE，写入支持替换及透明合成；用法见[实时绘图说明](DRAWING.md)。源码默认 core 为10项、all为126项，启用 animation 后各加1；需配套0.6.0服务和扩展，已发布0.5.1不包含这些增量。

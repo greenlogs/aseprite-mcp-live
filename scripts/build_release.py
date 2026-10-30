@@ -9,9 +9,9 @@ import tomllib
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
-EXTENSION_FILES = ("package.json", "main.lua", "bridge.lua", "editor.lua", "preview.lua", "animation.lua")
+EXTENSION_FILES = ("package.json", "main.lua", "bridge.lua", "editor.lua", "preview.lua", "animation.lua", "drawing.lua")
 SDIST_ROOT_FILES = {"pyproject.toml", "uv.lock", ".python-version", ".env.example",
-                    "LICENSE", "README.md", "README.en.md", "PKG-INFO", ".gitignore"}
+                    "LICENSE", "README.md", "README.en.md", "DRAWING.md", "PKG-INFO", ".gitignore"}
 
 
 def check_distribution_paths(names):

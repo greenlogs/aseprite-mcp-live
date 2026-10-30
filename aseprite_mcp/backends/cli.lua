@@ -45,6 +45,11 @@ local function execute()
   if p.action.name ~= "apply_operations" then
     fail("UNSUPPORTED_CAPABILITY", "Operation not implemented by CLI adapter")
   end
+  for _,op in ipairs(p.action.operations) do
+    if op.op~="create_layer" and op.op~="set_opacity" and op.op~="pixel" and op.op~="rectangle" then
+      fail("UNSUPPORTED_CAPABILITY","New drawing operations require the live backend")
+    end
+  end
   if spr.colorMode ~= ColorMode.RGB then
     fail("UNSUPPORTED_CAPABILITY", "Editing requires RGB")
   end

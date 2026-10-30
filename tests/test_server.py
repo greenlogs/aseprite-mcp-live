@@ -14,7 +14,7 @@ from aseprite_mcp.tools import canvas
 from conftest import ok, run
 
 
-@pytest.mark.parametrize("profile,count", [("core", 9), ("cli", 116), ("all", 125)])
+@pytest.mark.parametrize("profile,count", [("core", 10), ("cli", 116), ("all", 126)])
 def test_tool_profiles(profile, count, monkeypatch):
     monkeypatch.delenv("ASEPRITE_MCP_ENABLE_RAW_LUA", raising=False)
     tools = run(create_server(profile).list_tools())
@@ -41,7 +41,7 @@ def test_stdio_enumeration_and_mcp_error_flag(tmp_path):
         async with stdio_client(parameters) as streams:
             async with ClientSession(*streams) as session:
                 await session.initialize()
-                assert len((await session.list_tools()).tools) == 9
+                assert len((await session.list_tools()).tools) == 10
                 status = await session.call_tool("get_connection_status", {})
                 assert not status.isError
                 assert json.loads(status.content[0].text)["connected"] is False

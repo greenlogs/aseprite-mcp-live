@@ -98,7 +98,7 @@ def test_concurrent_cold_start_shares_one_process_and_sessions():
             nonlocal arrived
             async with client(port) as session:
                 owners.append(listener_pids("127.0.0.1", port))
-                assert len((await session.list_tools()).tools) == 9
+                assert len((await session.list_tools()).tools) == 10
                 arrived += 1
                 if arrived == 4:
                     ready.set()

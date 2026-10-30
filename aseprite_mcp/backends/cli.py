@@ -34,6 +34,11 @@ class CliBackend:
             raise BackendError(ErrorCode.INVALID_TARGET, "CLI requires a disk target")
         if request.action.name not in self.capabilities:
             raise BackendError(ErrorCode.UNSUPPORTED_CAPABILITY, request.action.name)
+        if request.action.name == "apply_operations" and any(
+            op.op not in {"create_layer", "set_opacity", "pixel", "rectangle"}
+            for op in request.action.operations
+        ):
+            raise BackendError(ErrorCode.UNSUPPORTED_CAPABILITY, "New drawing operations require the live backend")
         source = Path(request.target.path)
         if not source.is_absolute() or not source.is_file():
             raise BackendError(ErrorCode.INVALID_TARGET, "CLI requires an existing absolute file path")

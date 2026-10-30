@@ -9,10 +9,10 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
 PROTOCOL_VERSION = 1
-SERVICE_VERSION = "0.5.1"
+SERVICE_VERSION = "0.6.0"
 CORE_CAPABILITIES = frozenset({
     "list_documents", "get_document_info", "create_sprite", "apply_operations",
-    "get_preview", "save_sprite", "undo", "redo",
+    "get_preview", "read_pixels", "save_sprite", "undo", "redo",
 })
 CAPABILITY_SETS = {"animation": frozenset({"apply_animation"})}
 LIVE_CAPABILITIES = CORE_CAPABILITIES | frozenset().union(*CAPABILITY_SETS.values())
@@ -138,7 +138,97 @@ class Rectangle(Pixel):
     filled: bool = True
 
 
-Edit = Annotated[CreateLayer | SetOpacity | Pixel | Rectangle, Field(discriminator="op")]
+RGBA = tuple[Byte, Byte, Byte, Byte]
+
+
+class PixelPoint(Model):
+    x: NonNegative
+    y: NonNegative
+    rgba: RGBA
+
+
+class Pixels(Model):
+    op: Literal["pixels"]
+    layer: LayerRef
+    frame: Positive = 1
+    points: Annotated[list[PixelPoint], Field(min_length=1)]
+
+
+class PixelRun(Model):
+    count: Positive
+    rgba: RGBA
+
+
+class ClearRegion(Model):
+    op: Literal["clear_region"]
+    layer: LayerRef
+    frame: Positive = 1
+    x: NonNegative
+    y: NonNegative
+    width: Positive
+    height: Positive
+
+
+class WriteRegion(ClearRegion):
+    op: Literal["write_region"]
+    encoding: Literal["rgba", "rle"] = "rgba"
+    mode: Literal["replace", "source_over"] = "replace"
+    pixels: list[RGBA] | None = None
+    runs: list[PixelRun] | None = None
+
+    @model_validator(mode="after")
+    def check_payload(self):
+        area = self.width * self.height
+        if self.encoding == "rgba":
+            if self.pixels is None or self.runs is not None or len(self.pixels) != area:
+                raise ValueError("RGBA pixels must exactly fill width*height; runs must be absent")
+        elif self.runs is None or self.pixels is not None or sum(r.count for r in self.runs) != area:
+            raise ValueError("RLE counts must exactly fill width*height; pixels must be absent")
+        return self
+
+
+class Line(Model):
+    op: Literal["line"]
+    layer: LayerRef
+    frame: Positive = 1
+    x1: NonNegative
+    y1: NonNegative
+    x2: NonNegative
+    y2: NonNegative
+    rgba: RGBA
+    thickness: Positive = 1
+
+
+class Ellipse(Rectangle):
+    op: Literal["ellipse"]
+
+
+def edit_bounds(op):
+    """Canvas-space bounds, exclusive right/bottom; metadata has no bounds."""
+    if isinstance(op, Line):
+        before = (op.thickness - 1) // 2
+        after = op.thickness - before
+        return (min(op.x1, op.x2) - before, min(op.y1, op.y2) - before,
+                max(op.x1, op.x2) + after, max(op.y1, op.y2) + after)
+    if isinstance(op, Pixels):
+        return (min(p.x for p in op.points), min(p.y for p in op.points),
+                max(p.x for p in op.points) + 1, max(p.y for p in op.points) + 1)
+    if isinstance(op, (Pixel, ClearRegion)):
+        return op.x, op.y, op.x + getattr(op, "width", 1), op.y + getattr(op, "height", 1)
+    return None
+
+
+def edit_cost(op):
+    if isinstance(op, Pixels):
+        return len(op.points)
+    if isinstance(op, Line):
+        return (max(abs(op.x2-op.x1), abs(op.y2-op.y1)) + 1) * op.thickness**2
+    bounds = edit_bounds(op)
+    return (bounds[2]-bounds[0]) * (bounds[3]-bounds[1]) if bounds else 0
+
+
+Edit = Annotated[CreateLayer | SetOpacity | Pixel | Rectangle | Pixels | WriteRegion | Line | Ellipse | ClearRegion,
+                 Field(discriminator="op")]
 
 
 class GetInfo(Model):
@@ -229,6 +319,14 @@ class GetPreview(Model):
     region: Region | None = None
 
 
+class ReadPixels(Model):
+    name: Literal["read_pixels"]
+    layer: Identifier
+    frame: Positive = 1
+    region: Region
+    encoding: Literal["rgba", "rle"] = "rgba"
+
+
 class SaveSprite(Model):
     name: Literal["save_sprite"]
     path: Annotated[str, Field(min_length=1)] | None = None
@@ -240,7 +338,7 @@ class History(Model):
 
 
 Action = Annotated[
-    GetInfo | ListDocuments | CreateSprite | ApplyOperations | ApplyAnimation | GetPreview | SaveSprite | History,
+    GetInfo | ListDocuments | CreateSprite | ApplyOperations | ApplyAnimation | GetPreview | ReadPixels | SaveSprite | History,
     Field(discriminator="name"),
 ]
 
@@ -262,7 +360,7 @@ class Request(Model):
             document_action = self.action.name not in {"list_documents", "create_sprite"}
             if document_action != (self.target.document_id is not None):
                 raise ValueError("Explicit document target required only for document operations")
-            if self.action.name in (LIVE_WRITES - {"create_sprite"}) | {"get_preview"}:
+            if self.action.name in (LIVE_WRITES - {"create_sprite"}) | {"get_preview", "read_pixels"}:
                 if self.expected_revision is None:
                     raise ValueError("Expected revision required")
         elif self.expected_revision is not None or self.expected_context is not None:
@@ -340,10 +438,13 @@ def check_limits(request: Request, limits: Limits) -> None:
     if isinstance(action, ApplyOperations):
         if len(action.operations) > limits.max_operations:
             raise BackendError(ErrorCode.LIMIT_EXCEEDED, "Too many operations")
-        pixels = sum(op.width * op.height if isinstance(op, Rectangle) else
-                     1 if isinstance(op, Pixel) else 0 for op in action.operations)
+        pixels = sum(edit_cost(op) for op in action.operations)
         if pixels > limits.max_pixels:
             raise BackendError(ErrorCode.LIMIT_EXCEEDED, "Batch exceeds pixel budget")
+        if any((bounds := edit_bounds(op)) and (bounds[0] < 0 or bounds[1] < 0) for op in action.operations):
+            raise BackendError(ErrorCode.INVALID_REQUEST, "Brush extends outside canvas")
+    if isinstance(action, ReadPixels) and action.region.width * action.region.height > limits.max_pixels:
+        raise BackendError(ErrorCode.LIMIT_EXCEEDED, "Pixel read exceeds pixel budget")
     if isinstance(action, ApplyAnimation) and len(action.operations) > limits.max_operations:
         raise BackendError(ErrorCode.LIMIT_EXCEEDED, "Too many animation operations")
 

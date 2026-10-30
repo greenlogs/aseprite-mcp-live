@@ -94,6 +94,20 @@ def create_server(profile: str | None = None, *, config: RuntimeConfig | None = 
             return await dispatch({"name": "get_document_info"}, session_id, document_id)
 
         @server.tool()
+        async def read_pixels(session_id: str, document_id: str, expected_revision: int,
+                              layer: str, region: dict, frame: int = 1, encoding: str = "rgba") -> list[TextContent]:
+            """读取普通 RGB 图层原始像素（不合成透明度）。region={x,y,width,height}；
+            按行优先返回 pixels=[[r,g,b,a],...] 或 encoding=rle 的 runs=[{count,rgba},...]。
+            空 Cel 返回透明像素，帧从1开始，必须匹配 expected_revision。
+            """
+            value = await dispatch({"name": "read_pixels", "layer": layer, "frame": frame,
+                                    "region": region, "encoding": encoding}, session_id,
+                                   document_id, expected_revision)
+            # FastMCP otherwise pretty-prints every channel on its own line,
+            # multiplying the response size beyond the checked wire budget.
+            return [TextContent(type="text", text=json.dumps(value, ensure_ascii=False, separators=(",", ":")))]
+
+        @server.tool()
         async def create_sprite(session_id: str, width: int, height: int, request_id: str | None = None) -> dict:
             """创建未保存的 RGB 文档。"""
             return await dispatch({"name": "create_sprite", "width": width, "height": height},
@@ -103,7 +117,13 @@ def create_server(profile: str | None = None, *, config: RuntimeConfig | None = 
         async def apply_operations(session_id: str, document_id: str, expected_revision: int,
                                    operations: list[dict], expected_context: int | None = None,
                                    request_id: str | None = None) -> dict:
-            """在指定修订执行原子批次；操作格式见协议 v1。"""
+            """在指定修订执行原子批次，一次撤销。layer={kind:id或ref,value:标识}，frame默认1。
+            支持 create_layer(ref,name)、set_opacity(layer,opacity)、pixel(layer,x,y,rgba)、
+            rectangle/ellipse(layer,x,y,width,height,rgba,filled=true)、pixels(layer,points=[{x,y,rgba}])、
+            line(layer,x1,y1,x2,y2,rgba,thickness=1)、clear_region(layer,x,y,width,height)、
+            write_region(layer,x,y,width,height,encoding=rgba|rle,mode=replace|source_over,
+            pixels=[[r,g,b,a],...]或runs=[{count,rgba},...])。区域像素按行优先，RGBA为0–255整数。
+            """
             return await dispatch({"name": "apply_operations", "operations": operations}, session_id,
                                   document_id, expected_revision, expected_context, request_id)
 

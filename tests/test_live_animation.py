@@ -66,7 +66,7 @@ def test_animation_opt_in_negotiation_limits_and_unknown_receipt(monkeypatch):
     monkeypatch.delenv("ASEPRITE_MCP_CAPABILITY_SETS", raising=False)
     assert "apply_animation" not in {t.name for t in run(create_server().list_tools())}
     monkeypatch.setenv("ASEPRITE_MCP_CAPABILITY_SETS", "animation")
-    for profile, count in [("core", 10), ("cli", 116), ("all", 126)]:
+    for profile, count in [("core", 11), ("cli", 116), ("all", 127)]:
         names = {t.name for t in run(create_server(profile).list_tools())}
         assert len(names) == count
         assert ("apply_animation" in names) == (profile != "cli")
@@ -116,7 +116,7 @@ def test_real_animation_mcp_history_preview_cli_and_failures(tmp_path):
         gallery = []
         async with stdio_client(parameters) as streams, ClientSession(*streams, read_timeout_seconds=timedelta(seconds=20)) as client:
             await client.initialize()
-            assert len((await client.list_tools()).tools) == 126
+            assert len((await client.list_tools()).tools) == 127
             async with editor_process(tmp_path) as manual:
                 async with asyncio.timeout(15):
                     while True:

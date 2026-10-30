@@ -2747,5 +2747,34 @@
       "undo": "one transaction; undo/redo verified",
       "status": "accepted Windows Aseprite1.3.7/API28"
     }
-  ]
+  ],
+  "core_drawing": {
+    "module": "P3-M3",
+    "service_version": "0.6.0",
+    "minimum_api": 28,
+    "operations": [
+      "create_layer",
+      "set_opacity",
+      "pixel",
+      "rectangle",
+      "pixels",
+      "write_region",
+      "line",
+      "ellipse",
+      "clear_region"
+    ],
+    "new_tools": [
+      "read_pixels"
+    ],
+    "paths": [
+      "extension/drawing.lua",
+      "extension/editor.lua",
+      "aseprite_mcp/core/protocol.py"
+    ],
+    "tests": [
+      "tests/test_live_drawing.py"
+    ],
+    "cli_new_operations": "UNSUPPORTED_CAPABILITY",
+    "status": "accepted Windows Aseprite1.3.7/API28; 231 full + 18 final targeted passed; installed package accepted"
+  }
 }

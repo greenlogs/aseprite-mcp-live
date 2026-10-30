@@ -1,6 +1,7 @@
 -- Session-local object registry and undoable edits. Objects are compared by
 -- equality: API 28 may return different userdata wrappers on each enumeration.
 local M={}
+local drawing=dofile(app.fs.joinPath(app.fs.filePath(debug.getinfo(1,"S").source:sub(2)),"drawing.lua"))
 local function fail(code,message) error({code=code,message=message},0) end
 local function find(items,object)
   for _,entry in ipairs(items) do if entry.object==object then return entry end end
@@ -115,11 +116,20 @@ function M.new(limits,preview,animation,animation_enabled)
   end
   function self:with_target(sprite,callback,refresh)
     local old_sprite,old_layer,old_frame=app.activeSprite,app.activeLayer,app.activeFrame
+    local old_range=drawing.save_range()
+    -- API28 exposes Range.type read-only; layers/frames setters cannot rebuild
+    -- a CELS range. Refuse before any mutation rather than lose this selection.
+    if old_range and old_range.type==RangeType.CELS then
+      fail("UNSUPPORTED_CAPABILITY","Clear the timeline Cel selection before editing; API28 cannot restore its range type")
+    end
     local old_frame_number=old_frame and old_frame.frameNumber
     local previous=self.suppress_context; self.suppress_context=true
-    local ok,value=pcall(function() app.activeSprite=sprite; return callback() end)
+    local ok,value=pcall(function()
+      if app.activeSprite~=sprite then app.activeSprite=sprite end
+      return callback()
+    end)
     local restored,restore_error=pcall(function()
-      app.activeSprite=old_sprite
+      if app.activeSprite~=old_sprite then app.activeSprite=old_sprite end
       if old_sprite then
         if old_layer then app.activeLayer=old_layer end
         if old_frame then
@@ -127,6 +137,7 @@ function M.new(limits,preview,animation,animation_enabled)
           for _,frame in ipairs(old_sprite.frames) do if frame==old_frame then surviving=frame;break end end
           app.activeFrame=surviving or old_sprite.frames[math.min(old_frame_number,#old_sprite.frames)]
         end
+        drawing.restore_range(old_range)
       end
     end)
     self.suppress_context=previous
@@ -152,7 +163,7 @@ function M.new(limits,preview,animation,animation_enabled)
     if sprite.colorMode~=ColorMode.RGB then fail("UNSUPPORTED_CAPABILITY","Editing requires RGB") end
     if #operations>limits.max_operations then fail("LIMIT_EXCEEDED","Too many operations") end
     local refs,pixels={},0
-    local copies={}; local allocated=0
+    local batch={entries={},by_key={}}
     for _,op in ipairs(operations) do
       if op.op=="create_layer" then
         if refs[op.ref] then fail("INVALID_REQUEST","Duplicate layer reference") end
@@ -162,66 +173,48 @@ function M.new(limits,preview,animation,animation_enabled)
         if type(layer)~="table" and not editable(layer) then
           fail("UNSUPPORTED_CAPABILITY","Target and its parents must be editable ordinary layers")
         end
-        if op.op=="pixel" or op.op=="rectangle" then
+        local left,top,right,bottom=drawing.bounds(op)
+        if left then
           if not sprite.frames[op.frame] then fail("INVALID_TARGET","Unknown frame") end
-          local w,h=op.width or 1,op.height or 1
-          if op.x<0 or op.y<0 or op.x+w>sprite.width or op.y+h>sprite.height then
+          if left<0 or top<0 or right>sprite.width or bottom>sprite.height then
             fail("INVALID_REQUEST","Coordinates exceed canvas")
           end
-          pixels=pixels+w*h
-          local key=tostring(layer)..":"..op.frame
-          local previous=copies[key]
-          local left,top,right,bottom=op.x,op.y,op.x+w,op.y+h
-          if previous then
-            left=math.min(left,previous[1]);top=math.min(top,previous[2])
-            right=math.max(right,previous[3]);bottom=math.max(bottom,previous[4])
-          end
-          if type(layer)~="table" then
-            local cel=layer:cel(op.frame)
-            if cel then
-              left=math.min(left,cel.position.x);top=math.min(top,cel.position.y)
-              right=math.max(right,cel.position.x+cel.image.width)
-              bottom=math.max(bottom,cel.position.y+cel.image.height)
+          pixels=pixels+drawing.cost(op)
+          local key=drawing.key(op)
+          local entry=batch.by_key[key]
+          if not entry then
+            entry={left=left,top=top,right=right,bottom=bottom,frame=op.frame}
+            batch.by_key[key]=entry;batch.entries[#batch.entries+1]=entry
+            if type(layer)~="table" then
+              local cel=layer:cel(op.frame)
+              if cel then
+                entry.left=math.min(entry.left,cel.position.x);entry.top=math.min(entry.top,cel.position.y)
+                entry.right=math.max(entry.right,cel.position.x+cel.image.width)
+                entry.bottom=math.max(entry.bottom,cel.position.y+cel.image.height)
+              end
             end
+          else
+            entry.left=math.min(left,entry.left);entry.top=math.min(top,entry.top)
+            entry.right=math.max(right,entry.right);entry.bottom=math.max(bottom,entry.bottom)
           end
-          copies[key]={left,top,right,bottom}
-          allocated=allocated+(right-left)*(bottom-top)
-          if allocated>limits.max_pixels then fail("LIMIT_EXCEEDED","Batch image copies exceed pixel budget") end
         elseif op.op~="set_opacity" then fail("INVALID_REQUEST","Unknown operation") end
       end
     end
     if pixels>limits.max_pixels then fail("LIMIT_EXCEEDED","Batch exceeds pixel budget") end
+    local allocated=0
+    for _,entry in ipairs(batch.entries) do allocated=allocated+(entry.right-entry.left)*(entry.bottom-entry.top) end
+    if allocated>limits.max_pixels then fail("LIMIT_EXCEEDED","Batch Cel buffers exceed pixel budget") end
+    return batch
   end
-  function self:apply_one(record,op,refs)
+  function self:apply_one(record,op,refs,batch,tick)
     local sprite=record.object
     if op.op=="create_layer" then
       local layer=sprite:newLayer(); layer.name=op.name; refs[op.ref]=layer
     elseif op.op=="set_opacity" then self:resolve(record,op,refs).opacity=op.opacity
     else
-      local layer=self:resolve(record,op,refs)
-      local cel=layer:cel(op.frame)
-      local w,h=op.width or 1,op.height or 1
-      local left,top,right,bottom=op.x,op.y,op.x+w,op.y+h
-      if cel then
-        left=math.min(left,cel.position.x); top=math.min(top,cel.position.y)
-        right=math.max(right,cel.position.x+cel.image.width); bottom=math.max(bottom,cel.position.y+cel.image.height)
-      end
-      if (right-left)*(bottom-top)>limits.max_pixels then fail("LIMIT_EXCEEDED","Expanded Cel exceeds pixel budget") end
-      local image=Image(right-left,bottom-top,ColorMode.RGB)
-      if cel then
-        -- Copy raw pixels, including alpha-zero RGB, into an independent image.
-        for it in cel.image:pixels() do
-          image:putPixel(it.x+cel.position.x-left,it.y+cel.position.y-top,it())
-        end
-      end
-      local color=app.pixelColor.rgba(table.unpack(op.rgba))
-      for y=0,h-1 do for x=0,w-1 do
-        if op.op=="pixel" or op.filled or x==0 or y==0 or x==w-1 or y==h-1 then
-          image:putPixel(op.x+x-left,op.y+y-top,color)
-        end
-      end end
-      if cel then cel.image=image; cel.position=Point(left,top)
-      else sprite:newCel(layer,op.frame,image,Point(left,top)) end
+      local entry=batch.by_key[drawing.key(op)]
+      drawing.prepare(entry,self:resolve(record,op,refs),tick)
+      drawing.paint(entry,op,tick)
     end
   end
   function self:execute(request)
@@ -255,18 +248,22 @@ function M.new(limits,preview,animation,animation_enabled)
       local value=preview.render(sprite,action,limits)
       self.preview_timing=preview.last_timing
       return value,record
+    elseif action.name=="read_pixels" then
+      if sprite.colorMode~=ColorMode.RGB then fail("UNSUPPORTED_CAPABILITY","Pixel reads require RGB") end
+      local layer=self:resolve(record,{layer={kind="id",value=action.layer}},{})
+      if not ordinary(layer) then fail("UNSUPPORTED_CAPABILITY","Pixel reads require an ordinary layer") end
+      return drawing.read(sprite,layer,action,limits),record
     elseif action.name=="apply_operations" then
-      self:validate(record,action.operations)
+      local batch=self:validate(record,action.operations)
       local refs={}
       self:with_target(sprite,function()
         app.transaction("MCP batch",function()
-          local started=os.clock()
+          local tick=drawing.clock(limits)
           for _,op in ipairs(action.operations) do
-            self:apply_one(record,op,refs)
-            if os.clock()-started>(limits.max_batch_seconds or 0.25) then
-              fail("LIMIT_EXCEEDED","Atomic batch exceeded CPU budget; reduce batch size")
-            end
+            self:apply_one(record,op,refs,batch,tick)
+            tick(true)
           end
+          drawing.commit(batch,tick)
         end)
       end,true)
       self:sync()

@@ -1,6 +1,6 @@
 -- Aseprite 1.3.7 uses (message, data); do not require the newer error argument.
 local M = {}
-local EXTENSION_VERSION = "0.5.1"
+local EXTENSION_VERSION = "0.6.0"
 
 local function environment(name)
   local value=os.getenv(name)
@@ -73,6 +73,9 @@ function M.new(plugin)
         local capabilities={"list_documents"}
         if Sprite and Image and app.events and app.transaction and app.undo and app.redo then
           capabilities={"list_documents","get_document_info","create_sprite","apply_operations","save_sprite","undo","redo"}
+          if app.pixelColor and app.pixelColor.rgbaR and app.pixelColor.rgbaG and app.pixelColor.rgbaB and app.pixelColor.rgbaA then
+            capabilities[#capabilities+1]="read_pixels"
+          end
           if string.pack then capabilities[#capabilities+1]="get_preview" end
           local animation=dofile(app.fs.joinPath(plugin.path,"animation.lua"))
           if animation.available() then capabilities[#capabilities+1]="apply_animation" end
@@ -126,6 +129,10 @@ function M.new(plugin)
           else reject("INVALID_REQUEST", "Missing editor action") end
         end
         local encoded=json.encode(result)
+        if request.action and request.action.name=="read_pixels" and #encoded>self.limits.max_message_bytes then
+          result.ok=false;result.data=nil;reject("LIMIT_EXCEEDED","Pixel response too large; reduce region")
+          encoded=json.encode(result)
+        end
         if not self.cache[request.request_id] then self.order[#self.order+1]=request.request_id end
         -- Keep the original ID receipt on conflict.
         if not result.error or result.error.code~="REQUEST_CONFLICT" then

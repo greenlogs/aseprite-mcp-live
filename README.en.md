@@ -264,3 +264,7 @@ If the problem persists, submit your software versions, startup method, and erro
 Adapted from the tools and test foundation of [diivi/aseprite-mcp](https://github.com/diivi/aseprite-mcp). The upstream MIT license and copyright notices are retained, and new code is also released under the [MIT License](LICENSE).
 
 This project is a third-party integration and is not affiliated with the official Aseprite project. Aseprite must be obtained separately and is not distributed with this project.
+
+## Source drawing additions (0.6.0, unreleased)
+
+Batches reuse Cel images and add bulk pixels, region writes, lines, ellipses, region clearing, and `read_pixels`. Region reads/writes support RGBA and RLE; writes support replacement and source-over compositing. See the [drawing reference](DRAWING.md) (Chinese). Source profiles expose 10 core / 126 all tools, plus one when animation is enabled. Matching 0.6.0 service and extension are required; published 0.5.1 does not include these additions.

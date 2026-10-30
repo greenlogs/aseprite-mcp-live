@@ -13,7 +13,8 @@ sys.path.insert(0, str(ROOT))
 def check():
     from aseprite_mcp.server import create_server
     from aseprite_mcp.core.config import RuntimeConfig
-    from aseprite_mcp.core.protocol import CAPABILITY_SETS
+    from aseprite_mcp.core.protocol import CAPABILITY_SETS, CORE_CAPABILITIES, Edit
+    from pydantic import TypeAdapter
 
     matrix = json.loads((ROOT / "tests/fixtures/tool-compatibility.json").read_text(encoding="utf-8"))
     records = matrix["tools"]
@@ -37,6 +38,11 @@ def check():
         names = {tool.name for tool in asyncio.run(create_server("cli").list_tools())}
         assert names - {"cli_execute"} == source_names - {"run_lua_script"}
         base = {tool.name for tool in asyncio.run(create_server("core", config=RuntimeConfig()).list_tools())}
+        assert base == CORE_CAPABILITIES | {"get_connection_status"}
+        drawing = matrix["core_drawing"]
+        assert set(drawing["new_tools"]) <= base
+        assert set(drawing["operations"]) == set(TypeAdapter(Edit).json_schema()["discriminator"]["mapping"])
+        assert all((ROOT / path).is_file() for path in drawing["paths"] + drawing["tests"])
         enabled = {tool.name for tool in asyncio.run(create_server("core", config=RuntimeConfig(
             capability_sets=frozenset(CAPABILITY_SETS))).list_tools())}
         reviewed = matrix["live_capabilities"]
