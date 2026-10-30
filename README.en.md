@@ -73,7 +73,7 @@ uv python install 3.13
 
 Both server startup methods require the companion extension:
 
-1. Go to [GitHub Releases](https://github.com/greenlogs/aseprite-mcp-live/releases) and download the `.aseprite-extension` file that matches your server version. The current server version is **0.5.0**.
+1. Go to [GitHub Releases](https://github.com/greenlogs/aseprite-mcp-live/releases) and download the `.aseprite-extension` file that matches your server version. The current server version is **0.5.1**.
 2. In Aseprite, open **Edit → Preferences → Extensions → Add Extension**, select the downloaded extension package, then install and enable it.
 
     <img src="./assets/step1.png" style="width: 50%; max-width: 100%; border-radius: 4px;" />
@@ -222,7 +222,7 @@ Use `ASEPRITE_MCP_TOOL_PROFILE` to select the tool profile:
 Change the server port using a startup argument, for example:
 
 ```powershell
-uvx --python 3.13 aseprite-mcp==0.5.0 --port 8766
+uvx --python 3.13 aseprite-mcp==0.5.1 --port 8766
 ```
 
 Append `--port` and `8766` to `args` in your client configuration, and set Port to `8766` in the extension settings. When running from local source, you can also use `uv run --locked aseprite-mcp --port 8766`.
@@ -231,7 +231,11 @@ Append `--port` and `8766` to `args` in your client configuration, and set Port 
 
 | Argument   | Purpose                                                                                             |
 | ---------- | --------------------------------------------------------------------------------------------------- |
-| `--shared` | Enable shared mode, allowing multiple clients to share the same connection to the background server |
+| `--shared` | Compatibility alias; live connections use shared mode by default in 0.5.1, so this argument is optional |
+
+In 0.5.1, `core` and `all` use independent client proxies connected to one shared background. Closing one chat preserves the other connections. Clients must use matching tool profiles, capabilities and limits. Refresh document state after a concurrent edit causes a revision conflict. The `cli` profile continues to provide disk tools without a live connection.
+
+When upgrading, install the matching 0.5.1 extension and restart your MCP client, ensuring the previous background has exited. Remove the obsolete `--takeover` and `--no-takeover` arguments from existing configurations. The service does not terminate processes occupying the port.
 
 ## Scope and Limitations
 
@@ -249,7 +253,7 @@ Append `--port` and `8766` to `args` in your client configuration, and set Port 
 | Extension not connected                 | Confirm that the MCP client has started the server, the extension is enabled, WebSocket permission has been granted, and both sides use the same port            |
 | Port already in use                     | The current source version shares connections by default. If an older standalone server or another program is using the port, stop it or choose a different port |
 | `Transport closed`                      | The previous MCP channel has ended. Enable shared mode and reestablish the client connection; restart the client if necessary                                    |
-| Version mismatch                        | Install matching versions of the server and extension. Use `aseprite-mcp==0.5.0` to pin the version                                                              |
+| Version mismatch                        | Install matching versions of the server and extension. Use `aseprite-mcp==0.5.1` to pin the version                                                              |
 | Document not found or revision conflict | Read the document list and information again, then use the current session and revision                                                                          |
 | Preview image not displayed             | Confirm that the client supports MCP image content, and reduce the preview area or scale factor                                                                  |
 

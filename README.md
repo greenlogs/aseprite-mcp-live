@@ -73,7 +73,7 @@ uv python install 3.13
 
 两种服务启动方式都需要配套扩展：
 
-1. 前往 [GitHub Releases](https://github.com/greenlogs/aseprite-mcp-live/releases)，下载与服务版本一致的 `.aseprite-extension` 文件。当前服务版本为 **0.5.0**。
+1. 前往 [GitHub Releases](https://github.com/greenlogs/aseprite-mcp-live/releases)，下载与服务版本一致的 `.aseprite-extension` 文件。当前服务版本为 **0.5.1**。
 2. 在 Aseprite 中打开 **Edit → Preferences → Extensions → Add Extension**，选择下载的扩展包，安装并启用。
 
     <img src="./assets/step1.png" style="width: 50%; max-width: 100%; border-radius: 4px;" />
@@ -116,7 +116,7 @@ uvx --python 3.13 aseprite-mcp
   "mcpServers": {
     "aseprite": {
       "command": "uvx",
-      // 因Codex多会话进程原因，需要共享模式的客户端，添加 --shared 参数
+      // 0.5.1默认共享；--shared作为兼容参数可省略
       "args": ["--python", "3.13", "aseprite-mcp", "--shared"],
       "env": {
         // 默认启用核心工具模式core，其他可选值为all，cli模式
@@ -204,11 +204,11 @@ Python MCP 服务通过 stdio 与客户端通信；Lua 扩展通过本机 WebSoc
 
 通过 `ASEPRITE_MCP_TOOL_PROFILE` 选择工具范围：
 
-| 值             | 工具范围                                    |
-| -------------- | ------------------------------------------- |
-| `all`          | 实时与 CLI 合计 125 个；启用动画后为 126 个 |
-| `core`（默认） | 9 个实时核心入口；启用动画后为 10 个        |
-| `cli`          | 116 个磁盘文件工具，不建立实时连接          |
+| 值             | 工具范围                           |
+| -------------- | ---------------------------------- |
+| `all`          | core，cli同时启用                  |
+| `core`（默认） | 目前9 个实时工具核心入口           |
+| `cli`          | 116 个磁盘文件工具，不建立实时连接 |
 
 ```json
 {
@@ -222,16 +222,20 @@ Python MCP 服务通过 stdio 与客户端通信；Lua 扩展通过本机 WebSoc
 通过启动参数修改服务端口，例如：
 
 ```powershell
-uvx --python 3.13 aseprite-mcp==0.5.0 --port 8766
+uvx --python 3.13 aseprite-mcp==0.5.1 --port 8766
 ```
 
 客户端配置中将 `--port`、`8766` 追加到 `args`，并在扩展设置中把 Port 改为 `8766`。本地源码运行同样支持 `uv run --locked aseprite-mcp --port 8766`。
 
 ### 参数
 
-| 值         | 用途                                               |
-| ---------- | -------------------------------------------------- |
-| `--shared` | 启用共享模式，允许多个客户端共享同一个后台服务连接 |
+| 值         | 用途                                                |
+| ---------- | --------------------------------------------------- |
+| `--shared` | 共享模式的兼容参数；0.5.1的实时连接默认共享，可省略 |
+
+0.5.1 的 `core` / `all` 通过独立客户端代理复用同一个后台服务，关闭一个聊天不会关闭其他聊天的连接。多个客户端的工具范围、能力和上限配置须一致；同时编辑发生修订冲突时，先重新读取画布状态。`cli` 仍为不建立实时连接的磁盘工具范围。
+
+从旧版升级时，安装配套 0.5.1 扩展并重启 MCP 客户端，确保旧后台退出。原 `--takeover` / `--no-takeover` 参数已删除，须从配置中移除；服务不会自动终止占用端口的进程。
 
 ## 使用范围
 
@@ -249,7 +253,7 @@ uvx --python 3.13 aseprite-mcp==0.5.0 --port 8766
 | 扩展未连接           | 确认服务已由 MCP 客户端启动、扩展已启用、WebSocket 权限已允许，双方端口一致 |
 | 端口被占用           | 当前源码默认共享连接；普通旧服务或其他程序占用时先停止或改端口              |
 | `Transport closed`   | 旧 MCP 通道已结束；使用共享模式后重新建立客户端连接，必要时重启客户端       |
-| 版本不匹配           | 安装同版本的服务和扩展；可使用 `aseprite-mcp==0.5.0` 固定版本               |
+| 版本不匹配           | 安装同版本的服务和扩展；可使用 `aseprite-mcp==0.5.1` 固定版本               |
 | 找不到文档或修订冲突 | 重新读取文档列表与信息，使用当前会话和修订                                  |
 | 预览图片未显示       | 确认客户端支持 MCP 图片内容，并缩小预览区域或缩放倍数                       |
 
