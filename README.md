@@ -16,14 +16,18 @@
 
 ---
 
-Aseprite MCP 将支持 MCP 的客户端如`Codex`，`CluadeCode`，`DeepseekHarness`等Agent与 Aseprite 连接起来，支持读取和编辑未保存画布、图片预览、撤销重做及可选基础动画，让你在同一文档中继续创作。同时保留 CLI 磁盘文件处理能力。
+Aseprite MCP 将支持 MCP 的客户端如`Codex`，`CluadeCode`，`DeepseekHarness`等Agent与 Aseprite 连接起来，支持`实时`读取和编辑未保存画布、图片预览、撤销重做及可选基础动画，让你在同一文档中继续创作。同时保留 CLI 磁盘文件处理能力。
 
-<div align="center">
-  <img src="./assets/preview1.gif" style="width: 50%; max-width: 100%; border-radius: 4px;" />
-</div>
-<div align="center">
-  <img src="./assets/preview2.png" style="width: 50%; max-width: 100%; border-radius: 4px;" />
-</div>
+<table>
+  <tr>
+    <td align="center"><img src="./assets/preview1.gif" width="30%" style="border-radius:4px;"/><br/>实时动画绘制</td>
+    <td align="center"><img src="./assets/display3.png" width="50%" style="border-radius:4px;"/><br/>实时场景绘制预览</td>
+    <td align="center"><img src="./assets/display2.png" width="50%" style="border-radius:4px;"/><br/>物品绘制</td>
+  </tr>
+  <tr>
+    <td align="center"><img src="./assets/display1.png" width="50%" style="border-radius:4px;"/><br/>实时框选，区域修改</td>
+  </tr>
+</table>
 
 [PyPI 安装包](https://pypi.org/project/aseprite-mcp/) · [Release 扩展下载](https://github.com/greenlogs/aseprite-mcp-live/releases) · [问题反馈](https://github.com/greenlogs/aseprite-mcp-live/issues)
 
@@ -76,7 +80,6 @@ uv python install 3.13
 1. 前往 [GitHub Releases](https://github.com/greenlogs/aseprite-mcp-live/releases)，下载与服务版本一致的 `.aseprite-extension` 文件。当前服务版本为 **0.5.1**。
 2. 在 Aseprite 中打开 **Edit → Preferences → Extensions → Add Extension**，选择下载的扩展包，安装并启用。
 
-    <img src="./assets/step1.png" style="width: 50%; max-width: 100%; border-radius: 4px;" />
     <img src="./assets/step2.png" style="width: 50%; max-width: 100%; border-radius: 4px;" />
 
    查看脚本状态：
@@ -94,6 +97,7 @@ uv python install 3.13
 `注意事项`：
 
 - 1.Agent工作时，尽量不要在画布上绘制，以免干扰实时协作。
+- 2.确保扩展与服务版本匹配，否则可能导致连接失败或功能异常。
 
 扩展默认自动连接 `127.0.0.1:8765`。在 **File → Scripts → MCP: Connect / Settings** 中可查看状态、调整端口或断开连接，无需选择连接文件。
 
@@ -204,11 +208,11 @@ Python MCP 服务通过 stdio 与客户端通信；Lua 扩展通过本机 WebSoc
 
 通过 `ASEPRITE_MCP_TOOL_PROFILE` 选择工具范围：
 
-| 值             | 工具范围                                    |
-| -------------- | ------------------------------------------- |
-| `all`          | 实时与 CLI 合计 125 个；启用动画后为 126 个 |
-| `core`（默认） | 9 个实时核心入口；启用动画后为 10 个        |
-| `cli`          | 116 个磁盘文件工具，不建立实时连接          |
+| 值             | 工具范围                           |
+| -------------- | ---------------------------------- |
+| `all`          | core，cli同时启用                  |
+| `core`（默认） | 目前9 个实时工具核心入口           |
+| `cli`          | 116 个磁盘文件工具，不建立实时连接 |
 
 ```json
 {
@@ -229,13 +233,9 @@ uvx --python 3.13 aseprite-mcp==0.5.1 --port 8766
 
 ### 参数
 
-| 值         | 用途                                               |
-| ---------- | -------------------------------------------------- |
+| 值         | 用途                                                |
+| ---------- | --------------------------------------------------- |
 | `--shared` | 共享模式的兼容参数；0.5.1的实时连接默认共享，可省略 |
-
-0.5.1 的 `core` / `all` 通过独立客户端代理复用同一个后台服务，关闭一个聊天不会关闭其他聊天的连接。多个客户端的工具范围、能力和上限配置须一致；同时编辑发生修订冲突时，先重新读取画布状态。`cli` 仍为不建立实时连接的磁盘工具范围。
-
-从旧版升级时，安装配套 0.5.1 扩展并重启 MCP 客户端，确保旧后台退出。原 `--takeover` / `--no-takeover` 参数已删除，须从配置中移除；服务不会自动终止占用端口的进程。
 
 ## 使用范围
 
@@ -264,7 +264,3 @@ uvx --python 3.13 aseprite-mcp==0.5.1 --port 8766
 基于 [diivi/aseprite-mcp](https://github.com/diivi/aseprite-mcp) 的工具与测试基础改造，保留上游 MIT 许可和版权，新增代码同样采用 [MIT 许可](LICENSE)。
 
 本项目为第三方集成，与 Aseprite 官方无隶属关系。Aseprite 需自行准备，不随项目分发。
-
-## 源码实时绘图增量（0.6.0，尚未发布）
-
-同一批次复用 Cel 图像，新增批量像素、区域写入、直线、椭圆、区域擦除和 `read_pixels`。区域写入/读取支持 RGBA 与 RLE，写入支持替换及透明合成；用法见[实时绘图说明](DRAWING.md)。源码默认 core 为10项、all为126项，启用 animation 后各加1；需配套0.6.0服务和扩展，已发布0.5.1不包含这些增量。
